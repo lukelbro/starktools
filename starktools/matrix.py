@@ -1,4 +1,3 @@
-import constants
 from functools import cached_property
 import numpy as np
 
@@ -12,6 +11,7 @@ class Matrix:
         self.__dict__['defects'] = {}
 
         self.matrix = self.gen_matrix_empty()
+        self.shape = (0, 0)
 
     @property # nmin should be read only
     def nmin(self):
@@ -26,9 +26,14 @@ class Matrix:
         return self.__dict__['defects']
 
     @cached_property # array flattened to 2d
-    def data(self):
-        return self.make_array()
-
+    def __array__(self, dtype=None):
+        array = self.make_array()
+        return array
+    
+    @property
+    def shape(self):
+        return self.__array__.shape
+    
     def gen_matrix_empty(self):
         """
         Generate zero matrix of mm[n][l][n'][l']
@@ -69,10 +74,6 @@ class Matrix:
                 j = 0
                 i += 1
         return m
-
-    @cached_property
-    def eigen(self):
-        return np.linalg.eigh(self.data)[0]
     
     def _get_qd(self, n, l):
         qd = self.defects
@@ -126,4 +127,3 @@ class Matrix:
     
     def __getitem__(self, a):
         return self.matrix[a]
-

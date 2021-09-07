@@ -1,5 +1,5 @@
-from matrix import Matrix
-from tools import Tools
+from .matrix import Matrix
+from .tools import Tools
 from math import sqrt
 from numba import jit
 
