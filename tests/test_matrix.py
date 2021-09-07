@@ -17,9 +17,3 @@ def test_matrix_shape():
     m0 = starktools.MatrixH0(nmin, nmax, defects)
     assert m0.shape == (206, 206)
 
-def test_matrix_eigen():
-    nmin = 3
-    nmax = 4
-    m0 = starktools.MatrixH0(nmin, nmax)
-    val = np.linalg.eigvalsh(m0)
-    assert val == 0
