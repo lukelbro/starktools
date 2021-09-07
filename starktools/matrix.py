@@ -1,4 +1,4 @@
-from functools import cached_property
+from functools import lru_cache
 import numpy as np
 
 class Matrix:
@@ -11,7 +11,6 @@ class Matrix:
         self.__dict__['defects'] = {}
 
         self.matrix = self.gen_matrix_empty()
-        self.shape = (0, 0)
 
     @property # nmin should be read only
     def nmin(self):
@@ -25,14 +24,14 @@ class Matrix:
     def defects(self):
         return self.__dict__['defects']
 
-    @cached_property # array flattened to 2d
     def __array__(self, dtype=None):
         array = self.make_array()
         return array
     
     @property
     def shape(self):
-        return self.__array__.shape
+        array = self.make_array()
+        return array.shape
     
     def gen_matrix_empty(self):
         """
@@ -55,7 +54,8 @@ class Matrix:
                 m1[b] = m2
             mm[a] = m1
         return mm
-
+    
+    @lru_cache
     def make_array(self):
         mm = self.matrix
 
