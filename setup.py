@@ -4,6 +4,6 @@ setup(
     name="starktools",
     version="0.1",
     author="Luke Brown",
-    packages=find_packages(),
-    install_requires=['numpy', 'numba'],
+    packages=find_packages(exclude=['*tests']),
+    install_requires=['numpy', 'numba']
 )
