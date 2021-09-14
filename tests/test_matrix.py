@@ -16,4 +16,3 @@ def test_matrix_shape():
     nmax = 53
     m0 = starktools.MatrixH0(nmin, nmax, defects)
     assert m0.shape == (206, 206)
-
