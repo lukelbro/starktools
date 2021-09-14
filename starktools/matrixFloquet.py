@@ -1,3 +1,8 @@
+from .matrix import Matrix
+from .tools import Tools
+from math import sqrt
+import numpy as np
+
 class MatrixFloquet(Matrix):
     def __init__(self, nmin: int, nmax: int, q: int):
         if nmin > nmax:
@@ -70,7 +75,7 @@ class MatrixH0Floquet(MatrixFloquet):
             nmin (int): minimum principle quantum number
             nmax (int): maximum principle quantum number
             q (int):  number of side bands to include in basis
-            frequency (float): frequency of side bands in atomic units
+            frequency (float): frequency of side bands in atomic units (freq_atomic = freq_Hz * h /E_He)
             defects (dict, optional): Dictionary of quantum defects. Defaults to {}.
 
         Raises:

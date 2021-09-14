@@ -23,16 +23,16 @@ class Matrix:
     @property # defects should be read only
     def defects(self):
         return self.__dict__['defects']
-
-    def __array__(self, dtype=None):
-        array = self.make_array()
-        return array
     
     @property
     def shape(self):
         array = self.make_array()
         return array.shape
-    
+
+    def __array__(self, dtype=None):
+        array = self.make_array()
+        return array
+
     def gen_matrix_empty(self):
         """
         Generate zero matrix of mm[n][l][n'][l']
