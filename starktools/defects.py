@@ -1,3 +1,5 @@
+from .tools import Tools
+from math import sqrt
 class QuantumDefects:
     def __init__(self, defects = {}):
         self.__dict__['defects'] = defects
