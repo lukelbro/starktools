@@ -10,7 +10,7 @@ class Tools:
             self.__dict__['nmax'] = nmax
 
             self.r, self.y, self.start, self.end = Tools.numerov.integrate(n, l, nmax)
-        
+        @jit
         def integrate(n: float, l: int, nmax = -1, rCore=0.65):
             """
             Calculate radial integral for given state using numerov approach.
