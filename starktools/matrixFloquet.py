@@ -1,3 +1,8 @@
+from .matrix import Matrix
+from .tools import Tools
+from math import sqrt
+import numpy as np
+
 class MatrixFloquet(Matrix):
     def __init__(self, nmin: int, nmax: int, q: int):
         if nmin > nmax:
@@ -15,7 +20,7 @@ class MatrixFloquet(Matrix):
         Generate zero matrix of mm[n][l][q][n'][l'][q']
         output is a nested dictionary
         """
-        nn = np.arange(self.nmin, self.nmax+1, 1)
+        nn = np.arange(self.nmin, self.nmax+1)
         qq = np.arange(-self.q, self.q+1)
         mm = {}
 
@@ -70,7 +75,7 @@ class MatrixH0Floquet(MatrixFloquet):
             nmin (int): minimum principle quantum number
             nmax (int): maximum principle quantum number
             q (int):  number of side bands to include in basis
-            frequency (float): frequency of side bands in atomic units
+            frequency (float): frequency of side bands in atomic units (freq_atomic = freq_Hz * h /E_He)
             defects (dict, optional): Dictionary of quantum defects. Defaults to {}.
 
         Raises:
@@ -84,13 +89,14 @@ class MatrixH0Floquet(MatrixFloquet):
         self.__dict__['nmax'] = nmax
         self.__dict__['q'] = q
         self.__dict__['defects'] = defects
+        self.__dict__['frequency'] = frequency
 
         # Make H0 array
         mm = self.gen_matrix_empty()
         for i in mm.keys(): 
             for j in mm[i].keys():
                 for k in mm[i][j].keys():
-                    mm[i][j][k][i][j][k] = -0.5 * (i - self._get_qd(i,j))**(-2) + k * frequency
+                    mm[i][j][k][i][j][k] = -0.5 * (i - self._get_qd(i,j))**(-2) + k * self.frequency
         self.matrix = mm
 
 class MatrixHsFloquet(MatrixFloquet):
@@ -206,8 +212,8 @@ class MatrixHfFloquet(MatrixFloquet):
                                     qi = k
                                     qj = qi + 1
                                     if (qj <= self.q):
-                                        mm[i][l2][qi][j][l1][qj] = radialInt * angularElem
-                                        mm[i][l2][qj][j][l1][qi] = radialInt * angularElem
+                                        mm[j][l2][qi][i][l1][qj] = radialInt * angularElem
+                                        mm[j][l2][qj][i][l1][qi] = radialInt * angularElem
                             except KeyError:
                                 pass
         self.matrix = mm

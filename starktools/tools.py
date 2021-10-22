@@ -10,7 +10,6 @@ class Tools:
             self.__dict__['nmax'] = nmax
 
             self.r, self.y, self.start, self.end = Tools.numerov.integrate(n, l, nmax)
-        
         @jit
         def integrate(n: float, l: int, nmax = -1, rCore=0.65):
             """
@@ -33,7 +32,7 @@ class Tools:
             # First starting point Y_{-1}
             rMax = 2 * nmax * (nmax + 15)
             if n == nmax: # Align wavefunctions using grid defined by max n in calculation
-                i = 2 # Numerov approach starts at third point in itteration
+                i = 2 # Numerov approach starts at third point in iteration
                 iStart = i - 2
                 rStart1 = rMax
             else:
@@ -43,7 +42,7 @@ class Tools:
                 i = i+2
             yStart1 = 1e-10
 
-            # Secound starting point Y_{0}
+            # Second starting point Y_{0}
             rStart2 = rStart1 * exp(-h)
             yStart2 = yStart1 * (1 + h*sqrt(g_func(rStart1)))
 
@@ -51,7 +50,7 @@ class Tools:
             rCore = 0.191**(1/3) # Core polarisability (specific to each atom species)
             rFugal = n**2 - n * sqrt(n**2 - l*(l+1)) # Inner turning point
 
-            # Numerov Method: Need to figure out the number itterations that will be included in the integartion.
+            # Numerov Method: Need to figure out the number iterations that will be included in the integration.
             ri = rStart1 * exp(-h*2)
 
             # Prepare arrays
