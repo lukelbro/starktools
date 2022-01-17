@@ -19,7 +19,7 @@ class QuantumDefects:
             return float(0)
 
     def energy_level(self, n, l):
-        return -0.5 * (n - self._get_qd(n,l))**(-2)
+        return - (n - self._get_qd(n,l))**(-2)
 
 
     def calc_matrix_element(self, n1, l1, n2, l2, nmax):

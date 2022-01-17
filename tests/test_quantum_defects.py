@@ -27,3 +27,23 @@ def test_numerov():
     d = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
 
     assert d == -4.008890618586264 # confirmed using matlab
+
+
+def test_defect():
+    qd = starktools.QuantumDefects(defects)
+    assert qd._get_qd(55, 0) == approx(0.296669286287103, abs=1e-12) # confirmed using matlab
+    assert qd._get_qd(55, 1) == approx(0.068354108675390) # confirmed using matlab
+
+
+def test_energy_level():
+    qd = starktools.QuantumDefects(defects)
+    e55p = qd.energy_level(55, 0)
+    assert e55p == -3.341738483799353e-04
+
+def test_energy_level_si():
+    qd = starktools.QuantumDefects(defects)
+    R_He = starktools.Constants.R_He
+    c  = starktools.Constants.c 
+    h = starktools.Constants.h
+    e55p = R_He * c * h * qd.energy_level(55, 0)
+    assert e55p == approx(7.283563680292469e-22)
