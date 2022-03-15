@@ -32,7 +32,7 @@ class QuantumDefects:
         ns2 = n2 - self._get_qd(n2, l2)
 
         # Numerov integrals
-        wf1 = Tools.numerov(ns1, l2, nmax)
+        wf1 = Tools.numerov(ns1, l1, nmax)
         wf2 = Tools.numerov(ns2, l2, nmax)
         
         # Radial overlap
@@ -50,3 +50,5 @@ class QuantumDefects:
             angularElem = sqrt(angularElem)
 
         return radialInt * angularElem
+
+        
