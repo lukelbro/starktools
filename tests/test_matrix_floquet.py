@@ -86,7 +86,6 @@ def test_matrix_HsFloquet():
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
             for q in qq:
-
                 for n2 in nn:
                     ll2 = np.arange(0, n2, dtype=np.int64)
                     for l2 in ll2:
@@ -98,8 +97,8 @@ def test_matrix_HsFloquet():
     wf1  = starktools.Tools.numerov(19, 0, 19)
     wf2 = starktools.Tools.numerov(13, 1, 19)
     radint = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
-    l1 = 0
-    angularElem = ((l1 + 1)**2)/((2*l1+3)*(2*l1+1))
+    l2 = 1
+    angularElem = (l2**2)/((2*l2+1)*(2*l2-1))
     angularElem = np.sqrt(angularElem)
 
     for q in qq:
@@ -110,7 +109,7 @@ def test_matrix_HsFloquet():
 def test_matrix_HfFloquet():
     """Test structure of HfFloquet matrix is correct.
     In the Floquet basis, the time-dependent component of the field couples states for
-    which q` = q ± 1, and l` = l ± 1
+    which q` = q ± 1, and l` = l ± 1
     """
     nmin = 13
     nmax = 19
