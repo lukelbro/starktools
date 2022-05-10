@@ -47,3 +47,10 @@ def test_energy_level_si():
     h = starktools.Constants.h
     e55p = R_He * c * h * qd.energy_level(55, 0)
     assert e55p == approx(7.283563680292469e-22)
+
+def test_calc_matrix_element():
+    qd = starktools.QuantumDefects(defects)
+    element = qd.calc_matrix_element(56, 0, 55, 1, 70)
+    assert element == approx(1190, abs=10)
+    element = qd.calc_matrix_element(55, 1, 56, 0, 70)
+    assert element == approx(1190, abs=10)

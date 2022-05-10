@@ -42,7 +42,7 @@ class QuantumDefects:
         m = 0
         angularElem = 0
         if l1>l2:
-            angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
+            angularElem = ((l2 + 1)**2 - m**2)/((2*l2+3)*(2*l2+1))
             angularElem = sqrt(angularElem)
 
         if l1<l2:
