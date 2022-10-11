@@ -1,4 +1,3 @@
-from functools import lru_cache
 import numpy as np
 
 class Matrix:
@@ -55,7 +54,6 @@ class Matrix:
             mm[a] = m1
         return mm
     
-    @lru_cache
     def make_array(self):
         mm = self.matrix
 

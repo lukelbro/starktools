@@ -143,3 +143,23 @@ def test_matrix_HfFloquet():
                                     assert m[n][l][q][n2][l2][q2] != 0
 
 
+def test_matrix_HfFloquet_conversion():
+    """Test structure of HfFloquet matrix is correct.
+    In the Floquet basis, the time-dependent component of the field couples states for
+    which q` = q ± 1, and l` = l ± 1
+    """
+    nmin = 13
+    nmax = 19
+    q = 2
+
+    m = starktools.MatrixHfFloquet(nmin, nmax, q)
+
+    nn = np.arange(nmin, nmax+1, dtype=np.int64)
+    qq = np.arange(-q, q+1, dtype=np.int64)
+
+    array = np.array(m)
+    # mm[13][0][0][13][1][1]
+    i = 1
+    j = 2 + 3
+    assert(array[i][j] == m[13][0][0][13][1][1])
+
