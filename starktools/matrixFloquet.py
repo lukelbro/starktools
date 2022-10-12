@@ -191,7 +191,7 @@ class MatrixHfFloquet(MatrixFloquet):
                             try:
                                 test = mm[i][l1][0][j][l2][0] # Check for entry
 
-                                angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
+                                angularElem = (l2**2 - m**2)/((2*l2+1)*(2*l2-1))
                                 angularElem = sqrt(angularElem)
 
                                 for k in mm[i][l1].keys():
@@ -207,7 +207,7 @@ class MatrixHfFloquet(MatrixFloquet):
                             try:
                                 test = mm[j][l2][0][i][l1][0]
 
-                                angularElem = (l2**2 - m**2)/((2*l2+1)*(2*l2-1))
+                                angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
                                 angularElem = sqrt(angularElem)
                                 for k in mm[j][l2].keys():
                                     qi = k

@@ -150,7 +150,7 @@ def test_matrix_HfFloquet_conversion():
     """
     nmin = 13
     nmax = 19
-    q = 2
+    q = 1
 
     m = starktools.MatrixHfFloquet(nmin, nmax, q)
 
@@ -163,3 +163,36 @@ def test_matrix_HfFloquet_conversion():
     j = 2 + 3
     assert(array[i][j] == m[13][0][0][13][1][1])
 
+
+def test_matrix_HfFloquet_conversion():
+    """Test structure of HfFloquet matrix is correct.
+    In the Floquet basis, the time-dependent component of the field couples states for
+    which q` = q ± 1, and l` = l ± 1
+    """
+    nmin = 13
+    nmax = 19
+    q = 2
+    mm = starktools.MatrixHfFloquet(nmin, nmax, q)
+
+    states = np.arange(min(mm.keys()), max(mm.keys())+1, 1) * (q*2 + 1)
+    
+    size = sum(states)
+    lookuptable = np.empty((states, states),object)
+
+
+    nn = np.arange(nmin, nmax+1, dtype=np.int64)
+    qq = np.arange(-q, q+1, dtype=np.int64)
+    i = 0
+    j = 0
+    for a1 in mm.keys():
+                for a2 in mm[a1].keys():
+                    for a3 in mm[a1][a2].keys():
+                        for b1 in mm[a1][a2][a3].keys():
+                            for b2 in mm[a1][a2][a3][b1].keys():
+                                for b3 in mm[a1][a2][a3][b1][b2].keys():
+                                    lookuptable[i][j] = (a1,a2,a3,b1,b2,b3)
+                                    j += 1
+                        j = 0
+                        i += 1
+    
+    
