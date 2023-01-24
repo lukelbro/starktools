@@ -198,7 +198,6 @@ class MatrixHfFloquet(MatrixFloquet):
                                     qi = k
                                     qj = qi + 1
                                     if (qj <= self.q):
-                                        
                                         mm[i][l1][qi][j][l2][qj] = radialInt * angularElem
                                         mm[i][l1][qj][j][l2][qi] = radialInt * angularElem
                             except KeyError:
