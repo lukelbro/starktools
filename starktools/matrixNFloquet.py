@@ -139,7 +139,7 @@ class MatrixHsNFloquet(MatrixNFloquet):
             self.matrix = mm
 
 class MatrixHfNFloquet(MatrixNFloquet):
-    def __init__(self, nmin: int, nmax: int, q: list, defects = {}):
+    def __init__(self, nmin: int, nmax: int, q: list, fieldnum:int, defects = {}):
         self.__dict__['nmin'] = nmin
         self.__dict__['nmax'] = nmax
         self.__dict__['qmaxs'] = q
@@ -180,40 +180,42 @@ class MatrixHfNFloquet(MatrixNFloquet):
                             angularElem = sqrt(angularElem)
                             value2 = radialInt * angularElem
 
-                            for i, qmax in enumerate(self.qmaxs):
-                                q = -qmax
-                                while q <= qmax:
-                                    qelement1 = np.zeros(len(self.qmaxs))
-                                    qelement1[i] = q
+                            qmax = self.qmaxs[fieldnum]
 
-                                    qelement2 = np.zeros(len(self.qmaxs))
-                                    qelement2[i] = q + 1
-      
-                                    try:
-                                        b1 = (n1, l1) + tuple(qelement1)
-                                        b2 = (n2, l2) + tuple(qelement2)  
-                                        basis = b1 + b2
-                                        set_by_path(mm, basis, value1)
-                                        
-                                        b1 = (n1, l1) + tuple(qelement2)
-                                        b2 = (n2, l2) + tuple(qelement1)  
-                                        basis = b1 + b2
-                                        set_by_path(mm, basis, value1)
-                                    except KeyError:
-                                        pass
-                                    try:
-                                        b1 = (n1, l1) + tuple(qelement1)
-                                        b2 = (n2, l2) + tuple(qelement2)  
-                                        basis = b2 + b1
-                                        set_by_path(mm, basis, value2)
 
-                                        b1 = (n1, l1) + tuple(qelement2)
-                                        b2 = (n2, l2) + tuple(qelement1)  
-                                        basis = b2 + b1
-                                        set_by_path(mm, basis, value2)
-                                    except KeyError:
-                                        pass
-                                    q += 1
+                            q = -qmax
+                            while q <= qmax:
+                                qelement1 = np.zeros(len(self.qmaxs))
+                                qelement1[fieldnum] = q
+
+                                qelement2 = np.zeros(len(self.qmaxs))
+                                qelement2[fieldnum] = q + 1
+    
+                                try:
+                                    b1 = (n1, l1) + tuple(qelement1)
+                                    b2 = (n2, l2) + tuple(qelement2)  
+                                    basis = b1 + b2
+                                    set_by_path(mm, basis, value1)
+                                    
+                                    b1 = (n1, l1) + tuple(qelement2)
+                                    b2 = (n2, l2) + tuple(qelement1)  
+                                    basis = b1 + b2
+                                    set_by_path(mm, basis, value1)
+                                except KeyError:
+                                    pass
+                                try:
+                                    b1 = (n1, l1) + tuple(qelement1)
+                                    b2 = (n2, l2) + tuple(qelement2)  
+                                    basis = b2 + b1
+                                    set_by_path(mm, basis, value2)
+
+                                    b1 = (n1, l1) + tuple(qelement2)
+                                    b2 = (n2, l2) + tuple(qelement1)  
+                                    basis = b2 + b1
+                                    set_by_path(mm, basis, value2)
+                                except KeyError:
+                                    pass
+                                q += 1
         self.matrix = mm
 
 

@@ -153,7 +153,7 @@ def test_matrix_HfNFloquet():
     nmax = 19
     q = [2]
 
-    m = starktools.MatrixHfNFloquet(nmin, nmax, q)
+    m = starktools.MatrixHfNFloquet(nmin, nmax, q, fieldnum=0)
 
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)
