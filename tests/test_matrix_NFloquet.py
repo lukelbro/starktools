@@ -90,6 +90,41 @@ def test_matrix_H0NFloquet():
                             if (n != n2) | (l != l2) | (q != q2):
                                 assert m[n][l][q][n2][l2][q2] == 0
 
+def test_compare_H0NFloquet_H0Floquet():
+    nmin = 1
+    nmax = 10
+    q = 2
+    freq = 2
+
+    m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
+    m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, [q], [freq])
+
+    np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
+
+def test_compare_HsNFloquet_HsFloquet():
+    nmin = 1
+    nmax = 10
+    q = 2
+    freq = 2
+
+    mH_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
+    mH_NFloquet = starktools.MatrixHsNFloquet(nmin, nmax, [q])
+
+    assert  np.asarray(mH_Floquet).all() == np.asarray(mH_NFloquet).all()
+
+def test_compare_HfNFloquet_HfFloquet():
+    nmin = 1
+    nmax = 10
+    q = 2
+    freq = 2
+
+    mf_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
+    mf_NFloquet = starktools.MatrixHfNFloquet(nmin, nmax, [q], 0)
+
+    assert  np.asarray(mf_Floquet).all() == np.asarray(mf_NFloquet).all()
+
+
+
 def test_matrix_HsNFloquet():
     """Test structure of HsFloquet matrix is correct.
     In the Floquet basis, the dc field only couples states for which m′= m, q′= q, and l' = l± 1.
@@ -179,3 +214,4 @@ def test_matrix_HfNFloquet():
                                     if m[n][l][q][n2][l2][q2] == 0:
                                         print(n,l,q,n2,l2,q2)
                                     assert m[n][l][q][n2][l2][q2] != 0
+

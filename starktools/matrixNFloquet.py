@@ -48,10 +48,11 @@ class MatrixNFloquet(Matrix):
         i = 0
         j = 0
         for b1 in nlqqbasis(self.nmin, self.nmax, self.qmaxs):
-            j = 0
-            i += 1
             for b2 in nlqqbasis(self.nmin, self.nmax, self.qmaxs):
+                m[i][j] = get_by_path(mm, b1 + b2)
                 j+=1
+            j = 0
+            i +=1
         return m
     
 class MatrixH0NFloquet(MatrixNFloquet):
