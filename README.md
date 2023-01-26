@@ -7,9 +7,7 @@ pip install git+https://github.com/lukelbro/starktools
 ```
 
 Rabi Frequency:
-$$
- \Omega_{i,j} = \frac{\langle i| e\mathbf{r} \cdot \mathbf{E}_0 |j \rangle}{\hbar}
-$$
+$$\Omega_{i,j} = \frac{\langle i| e\mathbf{r} \cdot \mathbf{E}_0 |j \rangle}{\hbar} $$
 
 
 ```
