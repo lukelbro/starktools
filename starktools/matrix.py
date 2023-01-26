@@ -27,6 +27,9 @@ class Matrix:
     def shape(self):
         array = self.make_array()
         return array.shape
+    
+    def keys(self):
+        return self.matrix.keys()
 
     def __array__(self, dtype=None):
         array = self.make_array()

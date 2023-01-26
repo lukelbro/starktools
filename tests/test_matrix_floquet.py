@@ -177,7 +177,7 @@ def test_matrix_HfFloquet_conversion():
     states = np.arange(min(mm.keys()), max(mm.keys())+1, 1) * (q*2 + 1)
     
     size = sum(states)
-    lookuptable = np.empty((states, states),object)
+    lookuptable = np.empty((size, size),object)
 
 
     nn = np.arange(nmin, nmax+1, dtype=np.int64)

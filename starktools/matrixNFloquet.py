@@ -43,7 +43,7 @@ class MatrixNFloquet(Matrix):
             states = states * (2*qmax + 1)
         
         size = sum(states)
-        m = np.empty((size,size), dtype=np.float32)
+        m = np.empty((size,size))
         
         i = 0
         j = 0
