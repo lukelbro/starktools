@@ -5,7 +5,7 @@ from math import sqrt
 import numpy as np
 from functools import reduce
 import operator
-from nested_dict import nested_dict
+import itertools
 
 class MatrixNFloquet(Matrix):
     def __init__(self, nmin: int, nmax: int, q: list):
@@ -66,16 +66,15 @@ class MatrixH0NFloquet(MatrixNFloquet):
         # Make H0 array
         mm = self.gen_matrix_empty()
         for n, l in nlbasis(self.nmin, self.nmax):
-            for i, qmax in enumerate(self.qmaxs):
-                q = -qmax
-                while q <= qmax:
-                    value = -0.5 * (n - self._get_qd(n,l))**(-2) + q * self.frequencys[i]
-                    qelement = np.zeros(len(self.qmaxs))
-                    qelement[i] = q
-                    basis = ((n, l) + tuple(qelement))
-                    element = basis + basis
-                    set_by_path(mm, element, value)
-                    q += 1
+            rybdergLevel = -0.5 * (n - self._get_qd(n,l))**(-2)
+            for qq in qqbasis(self.qmaxs):
+                value = rybdergLevel
+                for i,  q in enumerate(qq):
+                    value += self.frequencys[i] * q
+                basis = ((n, l) + qq)
+                element = basis + basis
+                set_by_path(mm, element, value)
+                
         self.matrix = mm
 
 class MatrixHsNFloquet(MatrixNFloquet):
@@ -119,32 +118,28 @@ class MatrixHsNFloquet(MatrixNFloquet):
                             angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
                             angularElem = sqrt(angularElem)
                             value2 = radialInt * angularElem
-                            for i, qmax in enumerate(self.qmaxs):
-                                q = -qmax
-                                while q <= qmax:
-                                    qelement = np.zeros(len(self.qmaxs))
-                                    qelement[i] = q
-                                    
-                                    b1 = (n1, l1) + tuple(qelement)
-                                    b2 = (n2, l2) + tuple(qelement)
-                                    
-                                    try: #entry may not exist?
-                                        basis = b1 + b2
-                                        set_by_path(mm, basis, value1)
-                                        
-                                        basis = b2 + b1
-                                        set_by_path(mm, basis, value2)
-                                    except KeyError:
-                                        pass
-                                    q += 1
-            self.matrix = mm
 
+                            for q in self.qmaxs:                                    
+                                b1 = (n1, l1) + q
+                                b2 = (n2, l2) + q
+                                    
+                                try: #entry may not exist?
+                                    basis = b1 + b2
+                                    set_by_path(mm, basis, value1)
+                                    
+                                    basis = b2 + b1
+                                    set_by_path(mm, basis, value2)
+                                except KeyError:
+                                    pass
+        
+            self.matrix = mm
 class MatrixHfNFloquet(MatrixNFloquet):
-    def __init__(self, nmin: int, nmax: int, q: list, fieldnum:int, defects = {}):
+    def __init__(self, nmin: int, nmax: int, q: list, famps: list, defects = {}):
         self.__dict__['nmin'] = nmin
         self.__dict__['nmax'] = nmax
         self.__dict__['qmaxs'] = q
         self.__dict__['defects'] = defects
+        self.__dict__['famps'] = famps
 
         # Make HF array
         m = 0
@@ -154,6 +149,15 @@ class MatrixHfNFloquet(MatrixNFloquet):
         for i in range(self.nmax-1):
             elem = (i, i+1)
             elems.append(elem)
+        
+        qq = []
+        for q1 in qqbasis(self.qmaxs):
+            for q2 in qqbasis(self.qmaxs):
+                b1 = np.array(q1)
+                b2 = np.array(q2)
+                b = np.abs(b1 - b2)
+                if np.any(b == 1):
+                    qq.append((q1, q2, np.where(b == 1)))
 
         for elem in elems:
             l1 = elem[0]
@@ -181,30 +185,32 @@ class MatrixHfNFloquet(MatrixNFloquet):
                             angularElem = sqrt(angularElem)
                             value2 = radialInt * angularElem
                             
+
                             
-                            qmax = self.qmaxs[fieldnum]
-
-                            q = -qmax
-                            while q <= qmax:
-                                qelement1 = np.zeros(len(self.qmaxs))
-                                qelement1[fieldnum] = q
-
-                                qelement2 = np.zeros(len(self.qmaxs))
-                                qelement2[fieldnum] = q + 1
-    
+                            for qelement1, qelement2, fieldid in qq:
                                 try:
+                                    
+                                    v1 = 0
+                                    for id in fieldid:
+                                        v1 += 0.5*value1*famps[id]
+
                                     b1 = (n1, l1) + tuple(qelement1)
                                     b2 = (n2, l2) + tuple(qelement2)  
                                     basis = b1 + b2
-                                    set_by_path(mm, basis, value1)
+                                    set_by_path(mm, basis, v1)
                                     
                                     b1 = (n1, l1) + tuple(qelement2)
                                     b2 = (n2, l2) + tuple(qelement1)  
                                     basis = b1 + b2
-                                    set_by_path(mm, basis, value1)
+                                    set_by_path(mm, basis, v1)
+
                                 except KeyError:
                                     pass
                                 try:
+                                    v2 = 0
+                                    for id in fieldid:
+                                        v2 += 0.5*value2*famps[id]
+
                                     b1 = (n1, l1) + tuple(qelement1)
                                     b2 = (n2, l2) + tuple(qelement2)  
                                     basis = b2 + b1
@@ -218,10 +224,85 @@ class MatrixHfNFloquet(MatrixNFloquet):
                                     pass
                                 q += 1
         self.matrix = mm
+# class MatrixHfNFloquet(MatrixNFloquet):
+#     def __init__(self, nmin: int, nmax: int, q: list, fieldnum:int, defects = {}):
+#         self.__dict__['nmin'] = nmin
+#         self.__dict__['nmax'] = nmax
+#         self.__dict__['qmaxs'] = q
+#         self.__dict__['defects'] = defects
+
+#         # Make HF array
+#         m = 0
+#         mm = self.gen_matrix_empty()
+
+#         elems = []
+#         for i in range(self.nmax-1):
+#             elem = (i, i+1)
+#             elems.append(elem)
+
+#         for elem in elems:
+#             l1 = elem[0]
+#             l2 = elem[1]
+        
+#             for n1 in mm.keys():
+#                 if l1 < n1:
+#                     ns1 = n1 - self._get_qd(n1, l1)
+#                     wf1 = Tools.numerov(ns1, l1, self.nmax)
+
+#                     b1 = (n1, l1) + tuple([0]*len(self.qmaxs))
+#                     b2 = get_by_path(mm, b1)
+
+#                     for n2 in b2.keys():
+#                         if l2 < n2:
+#                             ns2 = n2 - self._get_qd(n2, l2)
+#                             wf2 = Tools.numerov(ns2, l2, self.nmax)
+#                             radialInt = Tools.numerov_calc_matrix_element(wf1, wf2)
+                            
+#                             angularElem = (l2**2 - m**2)/((2*l2+1)*(2*l2-1))
+#                             angularElem = sqrt(angularElem)
+#                             value1 = radialInt * angularElem
+
+#                             angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
+#                             angularElem = sqrt(angularElem)
+#                             value2 = radialInt * angularElem
+
+#                             qmax = self.qmaxs[fieldnum]
 
 
+#                             q = -qmax
+#                             while q <= qmax:
+#                                 qelement1 = np.zeros(len(self.qmaxs))
+#                                 qelement1[fieldnum] = q
 
+#                                 qelement2 = np.zeros(len(self.qmaxs))
+#                                 qelement2[fieldnum] = q + 1
+    
+#                                 try:
+#                                     b1 = (n1, l1) + tuple(qelement1)
+#                                     b2 = (n2, l2) + tuple(qelement2)  
+#                                     basis = b1 + b2
+#                                     set_by_path(mm, basis, value1)
+                                    
+#                                     b1 = (n1, l1) + tuple(qelement2)
+#                                     b2 = (n2, l2) + tuple(qelement1)  
+#                                     basis = b1 + b2
+#                                     set_by_path(mm, basis, value1)
+#                                 except KeyError:
+#                                     pass
+#                                 try:
+#                                     b1 = (n1, l1) + tuple(qelement1)
+#                                     b2 = (n2, l2) + tuple(qelement2)  
+#                                     basis = b2 + b1
+#                                     set_by_path(mm, basis, value2)
 
+#                                     b1 = (n1, l1) + tuple(qelement2)
+#                                     b2 = (n2, l2) + tuple(qelement1)  
+#                                     basis = b2 + b1
+#                                     set_by_path(mm, basis, value2)
+#                                 except KeyError:
+#                                     pass
+#                                 q += 1
+#         self.matrix = mm
 
 
 
@@ -265,16 +346,24 @@ class nlqbasis:
 class qqbasis:
     def __init__(self, qmaxs:list):
         self.qmaxs = qmaxs
-        self.qq = np.zeros(len(qmaxs))
 
     def __iter__(self):
-        for i, qmax in enumerate(self.qmaxs):
-            q = -qmax
-            while q <= qmax:
-                self.qq[i] = q
-                yield(tuple(self.qq))
-                q += 1
-            self.qq[i] = 0
+        """
+        Generates every integer combination between [-a, -b, -c, -d ] and [a , b, c, d].
+        
+        Parameters:
+        lst (list): List of n integers.
+        
+        Yields:
+        tuple: A tuple of n integers representing a combination.
+        
+        Example:
+        >>> list(integer_combinations([1, 2]))
+        [(-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -2), (0, -1), (0, 0), (0, 1), (0, 2), (1, -2), (1, -1), (1, 0), (1, 1), (1, 2)]
+        """
+        range_limits = [range(-x, x+1) for x in self.qmaxs]
+        for combination in itertools.product(*range_limits):
+            yield combination
 
 class nlqqbasis:
     def __init__(self, nmin: int, nmax: int, qmaxs:list):

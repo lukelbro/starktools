@@ -110,7 +110,7 @@ def test_compare_HsNFloquet_HsFloquet():
     mH_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
     mH_NFloquet = starktools.MatrixHsNFloquet(nmin, nmax, [q])
 
-    assert  np.asarray(mH_Floquet).all() == np.asarray(mH_NFloquet).all()
+    assert  np.all(np.asarray(mH_Floquet) == np.asarray(mH_NFloquet))
 
 def test_compare_HfNFloquet_HfFloquet():
     nmin = 1
@@ -118,10 +118,10 @@ def test_compare_HfNFloquet_HfFloquet():
     q = 2
     freq = 2
 
-    mf_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
+    mf_Floquet  =  starktools.MatrixHfFloquet(nmin, nmax, q)
     mf_NFloquet = starktools.MatrixHfNFloquet(nmin, nmax, [q], 0)
 
-    assert  np.asarray(mf_Floquet).all() == np.asarray(mf_NFloquet).all()
+    assert  np.all(np.asarray(mf_Floquet) == np.asarray(mf_NFloquet))
 
 
 
@@ -214,4 +214,3 @@ def test_matrix_HfNFloquet():
                                     if m[n][l][q][n2][l2][q2] == 0:
                                         print(n,l,q,n2,l2,q2)
                                     assert m[n][l][q][n2][l2][q2] != 0
-
