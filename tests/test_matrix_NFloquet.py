@@ -228,3 +228,143 @@ def test_init_NFlouet_with_two_ac_fields():
     q = [1,1]
     vac = [0.1, 0.1]
     hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
+
+def test_ac_starkshift_one_ac_field1():
+    
+    def find_eigen(n, l, v, offset=0):
+        qd = starktools.QuantumDefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        return find_nearest(v, energy)
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
+    }
+    qd = starktools.QuantumDefects(defects)
+
+    electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
+
+    estrength = 0.1
+
+    rabi = electricDipoleMoment * estrength/starktools.Constants.h
+
+    assert rabi/2 == 1571675.449592038
+    nmin = 54
+    nmax = 58
+    q = [1,1]
+    freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
+    vac = [0.1, 0]
+
+    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
+    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    
+    neig = h0.shape[0]
+    val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
+    
+    ind55s = find_eigen(55, 0, val)
+    
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, 100)
+
+def test_ac_starkshift_one_ac_field2():
+    
+    def find_eigen(n, l, v, offset=0):
+        qd = starktools.QuantumDefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        return find_nearest(v, energy)
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
+    }
+    qd = starktools.QuantumDefects(defects)
+
+    electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
+
+    estrength = 0.1
+
+    rabi = electricDipoleMoment * estrength/starktools.Constants.h
+
+    assert rabi/2 == 1571675.449592038
+    nmin = 54
+    nmax = 58
+    q = [1,1]
+    freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
+    vac = [0, 0.1]
+
+    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
+    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    
+    neig = h0.shape[0]
+    val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
+    
+    ind55s = find_eigen(55, 0, val)
+    
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, 100)
+   
+def test_ac_starkshift_two_ac_field():
+    
+    def find_eigen(n, l, v, offset=0):
+        qd = starktools.QuantumDefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        return find_nearest(v, energy)
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
+    }
+    qd = starktools.QuantumDefects(defects)
+
+    electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
+
+    estrength = 0.1
+
+    rabi = electricDipoleMoment * estrength/starktools.Constants.h
+
+    assert rabi/2 == 1571675.449592038
+    nmin = 54
+    nmax = 58
+    q = [1,1]
+    freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
+    vac = [0.05, 0.05]
+
+    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
+    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    
+    neig = h0.shape[0]
+    val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
+    
+    ind55s = find_eigen(55, 0, val)
+    
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, 100)
+
+
