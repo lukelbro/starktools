@@ -100,8 +100,7 @@ class MatrixHsNFloquet(MatrixNFloquet):
                     b2 = np.array(q2)
                     b = b1 - b2
                     if np.any(b == 0):
-                        print(q1, q2)
-                        qq.append((q1, q2, np.where(b == 0)))
+                        qq.append((q1, q2, np.where(b == 0)[0]))
     
         for elem in elems:
             l1 = elem[0]
@@ -174,7 +173,7 @@ class MatrixHfNFloquet(MatrixNFloquet):
                 b2 = np.array(q2)
                 b = np.abs(b1 - b2)
                 if np.any(b == 1):
-                    qq.append((q1, q2, np.where(b == 1)))
+                    qq.append((q1, q2, np.where(b == 1)[0]))
 
         for elem in elems:
             l1 = elem[0]

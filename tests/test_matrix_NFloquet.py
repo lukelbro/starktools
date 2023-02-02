@@ -214,3 +214,17 @@ def test_matrix_HfNFloquet():
                                     if m[n][l][q][n2][l2][q2] == 0:
                                         print(n,l,q,n2,l2,q2)
                                     assert m[n][l][q][n2][l2][q2] != 0
+
+def test_init_NFlouet_with_single_ac_fields():
+    nmin = 5
+    nmax = 8
+    q = [1]
+    vac = [0.1]
+    hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
+
+def test_init_NFlouet_with_two_ac_fields():
+    nmin = 5
+    nmax = 8
+    q = [1,1]
+    vac = [0.1, 0.1]
+    hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
