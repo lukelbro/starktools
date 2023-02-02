@@ -46,7 +46,7 @@ def test_qqbasis():
     qq = []
     for q1, q2 in starktools.qqbasis(qmaxs):
         qq.append((q1, q2))
-    assert qq[0] == (-1, 0)
+    assert qq[0] == (-1, -1)
 
 def test_nlqqbasis():
     nmin = 3
@@ -55,7 +55,7 @@ def test_nlqqbasis():
     basis = []
     for n, l, q1, q2 in starktools.nlqqbasis(nmin, nmax, qmaxs):
         basis.append((n, l, q1, q2))
-    assert basis[0] == (3, 0, -1, 0)
+    assert basis[0] == (3, 0, -1, -1)
 
 def test_matrix_H0NFloquet():
     """Test structure of H0floquet matrix is correct.
@@ -118,10 +118,10 @@ def test_compare_HfNFloquet_HfFloquet():
     q = 2
     freq = 2
 
-    mf_Floquet  =  starktools.MatrixHfFloquet(nmin, nmax, q)
-    mf_NFloquet = starktools.MatrixHfNFloquet(nmin, nmax, [q], 0)
+    mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q))
+    mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1]))*2
 
-    assert  np.all(np.asarray(mf_Floquet) == np.asarray(mf_NFloquet))
+    assert  np.all(mf_Floquet == mf_NFloquet)
 
 
 
@@ -188,7 +188,7 @@ def test_matrix_HfNFloquet():
     nmax = 19
     q = [2]
 
-    m = starktools.MatrixHfNFloquet(nmin, nmax, q, fieldnum=0)
+    m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps=[1])
 
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)

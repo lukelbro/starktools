@@ -92,6 +92,16 @@ class MatrixHsNFloquet(MatrixNFloquet):
         for i in range(self.nmax-1):
             elem = (i, i+1)
             elems.append(elem)
+
+        qq = []
+        for q1 in qqbasis(self.qmaxs):
+            for q2 in qqbasis(self.qmaxs):
+                    b1 = np.array(q1)
+                    b2 = np.array(q2)
+                    b = b1 - b2
+                    if np.any(b == 0):
+                        print(q1, q2)
+                        qq.append((q1, q2, np.where(b == 0)))
     
         for elem in elems:
             l1 = elem[0]
@@ -119,20 +129,27 @@ class MatrixHsNFloquet(MatrixNFloquet):
                             angularElem = sqrt(angularElem)
                             value2 = radialInt * angularElem
 
-                            for q in self.qmaxs:                                    
-                                b1 = (n1, l1) + q
-                                b2 = (n2, l2) + q
+                            for q1, q2, fieldid in qq:                                    
+                                b1 = (n1, l1) + q1
+                                b2 = (n2, l2) + q2
                                     
                                 try: #entry may not exist?
                                     basis = b1 + b2
                                     set_by_path(mm, basis, value1)
+                                except KeyError:
+                                    pass
+
+                                b1 = (n2, l2) + q1
+                                b2 = (n1, l1) + q2
                                     
-                                    basis = b2 + b1
+                                try: #entry may not exist?
+                                    basis = b1 + b2
                                     set_by_path(mm, basis, value2)
                                 except KeyError:
                                     pass
-        
+
             self.matrix = mm
+
 class MatrixHfNFloquet(MatrixNFloquet):
     def __init__(self, nmin: int, nmax: int, q: list, famps: list, defects = {}):
         self.__dict__['nmin'] = nmin
@@ -192,37 +209,37 @@ class MatrixHfNFloquet(MatrixNFloquet):
                                     
                                     v1 = 0
                                     for id in fieldid:
-                                        v1 += 0.5*value1*famps[id]
+                                        v1 += 0.5*value1*famps[int(id)]
 
                                     b1 = (n1, l1) + tuple(qelement1)
                                     b2 = (n2, l2) + tuple(qelement2)  
                                     basis = b1 + b2
                                     set_by_path(mm, basis, v1)
                                     
-                                    b1 = (n1, l1) + tuple(qelement2)
-                                    b2 = (n2, l2) + tuple(qelement1)  
-                                    basis = b1 + b2
-                                    set_by_path(mm, basis, v1)
+                                    # b1 = (n1, l1) + tuple(qelement2)
+                                    # b2 = (n2, l2) + tuple(qelement1)  
+                                    # basis = b1 + b2
+                                    # set_by_path(mm, basis, v1)
 
                                 except KeyError:
                                     pass
                                 try:
                                     v2 = 0
                                     for id in fieldid:
-                                        v2 += 0.5*value2*famps[id]
+                                        v2 += 0.5*value2*famps[int(id)]
 
                                     b1 = (n1, l1) + tuple(qelement1)
                                     b2 = (n2, l2) + tuple(qelement2)  
                                     basis = b2 + b1
-                                    set_by_path(mm, basis, value2)
+                                    set_by_path(mm, basis, v2)
 
-                                    b1 = (n1, l1) + tuple(qelement2)
-                                    b2 = (n2, l2) + tuple(qelement1)  
-                                    basis = b2 + b1
-                                    set_by_path(mm, basis, value2)
+                                    # b1 = (n1, l1) + tuple(qelement2)
+                                    # b2 = (n2, l2) + tuple(qelement1)  
+                                    # basis = b2 + b1
+                                    # set_by_path(mm, basis, value2)
                                 except KeyError:
                                     pass
-                                q += 1
+    
         self.matrix = mm
 # class MatrixHfNFloquet(MatrixNFloquet):
 #     def __init__(self, nmin: int, nmax: int, q: list, fieldnum:int, defects = {}):
