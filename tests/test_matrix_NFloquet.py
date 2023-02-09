@@ -564,7 +564,7 @@ def test_dc_stark_shift():
 
     transition1 = (vals[:,ind56s] - vals[:,ind55s])/2
     
-    q = (1,0)
+    q = (1,1)
     freq = (19.25691e9 * starktools.Constants.h /starktools.Constants.E_He, 9.148568e9* starktools.Constants.h /starktools.Constants.E_He)
     vac = (0, 0)
 
