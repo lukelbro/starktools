@@ -173,7 +173,11 @@ class MatrixHfNFloquet(MatrixNFloquet):
                 b2 = np.array(q2)
                 b = np.abs(b1 - b2)
                 if np.any(b == 1):
-                    qq.append((q1, q2, np.where(b == 1)[0]))
+                    fieldid = np.where(b == 1)[0]
+                    if fieldid.size <= 1:
+                        b[fieldid] = 0
+                    if np.all(b == 0):
+                        qq.append((q1, q2, fieldid))
 
         for elem in elems:
             l1 = elem[0]

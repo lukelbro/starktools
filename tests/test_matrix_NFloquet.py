@@ -141,6 +141,17 @@ def test_compare_H0NFloquet_H0Floquet():
 
     np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
 
+# def test__H0NFloquet_H0Floquet():
+#     nmin = 1
+#     nmax = 10
+#     q = (2,1)
+#     freq = (2,0.1)
+
+#     m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
+#     m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
+
+#     np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
+
 def test_compare_HsNFloquet_HsFloquet():
     nmin = 1
     nmax = 10
