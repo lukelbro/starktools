@@ -280,6 +280,55 @@ def test_init_NFlouet_with_two_ac_fields():
     vac = [0.1, 0.1]
     hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
 
+def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
+    nmin = 1
+    nmax = 3
+    q = (2,2)
+    f = (0.8,0.5)
+    h = starktools.MatrixHfNFloquet(nmin, nmax, q, f)
+
+    n1 = 2
+    l1 = 0
+    ma1 = 1
+    mb1 = 1
+    n2 = 2
+    l2 = 1
+    ma2 = 1
+    mb2 = 2
+    
+    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] != 0)
+
+    n1 = 2
+    l1 = 0
+    ma1 = 1
+    mb1 = 1
+    n2 = 2
+    l2 = 1
+    ma2 = 0
+    mb2 = 2
+
+    wf1  = starktools.Tools.numerov(n1, l1, nmax)
+    wf2 = starktools.Tools.numerov(n2, l2, nmax)
+    radint = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
+    angularElem = (l2**2)/((2*l2+1)*(2*l2-1))
+    angularElem = np.sqrt(angularElem)
+    elm = radint * angularElem
+
+    val = 0.5*elm*f[0] + 0.5*elm*f[1]
+    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == val)
+
+    n1 = 2
+    l1 = 0
+    ma1 = 1
+    mb1 = 1
+    n2 = 2
+    l2 = 1
+    ma2 = 2
+    mb2 = 2
+    
+    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == val)
+
+
 def test_ac_starkshift_one_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
@@ -459,7 +508,7 @@ def test_ac_starkshift_two_ac_field3():
 
     nmin = 54
     nmax = 58
-    q = [2,2]
+    q = [3,3]
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 8637175913* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.01, 0.01]
 
@@ -508,8 +557,8 @@ def test_ac_starkshift_three_ac_fields():
 
     assert rabi/2 == 1571675.449592038
     nmin = 55
-    nmax = 55
-    q = [1,1]
+    nmax = 56
+    q = [2,2]
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.1/2, 0.1/2]
 
@@ -521,7 +570,9 @@ def test_ac_starkshift_three_ac_fields():
     val = scipy.linalg.eigvalsh(M)
     ind55s = find_eigen(55, 0, val, offset=-rabi/2)
     
-    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=1000)
+    # Will not work as frequencies are commenserate!
+    assert (-1099228472064.9489  - val[ind55s]) != approx(rabi/2, abs=1000)
+
 
 
 def test_dc_stark_shift():

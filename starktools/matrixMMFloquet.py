@@ -174,10 +174,7 @@ class MatrixHfNFloquet(MatrixNFloquet):
                 b = np.abs(b1 - b2)
                 if np.any(b == 1):
                     fieldid = np.where(b == 1)[0]
-                    if fieldid.size <= 1:
-                        b[fieldid] = 0
-                    if np.all(b == 0):
-                        qq.append((q1, q2, fieldid))
+                    qq.append((q1, q2, fieldid))
 
         for elem in elems:
             l1 = elem[0]
@@ -204,9 +201,7 @@ class MatrixHfNFloquet(MatrixNFloquet):
                             angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
                             angularElem = sqrt(angularElem)
                             value2 = radialInt * angularElem
-                            
-
-                            
+                                                      
                             for qelement1, qelement2, fieldid in qq:
                                 try:
                                     
