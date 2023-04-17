@@ -65,8 +65,29 @@ def test_nlqqbasis():
         if i == value1:
             sucess = True
     assert sucess == True
-            
+           
+def test_matrix_dimensions():
+    nmin = 3
+    nmax = 5
+    q = [2,2,2]
+    field = [1,1,1]
+    freqs = [1,1,1]
+    
+    count = 0
+    for b1 in starktools.nlqqbasis(nmin,nmax,q):
+        count += 1
+    
+    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freqs))
+    assert h0.shape == (count, count)
 
+    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, field))
+    assert hf.shape == (count, count)
+
+    Hs = np.asarray(starktools.MatrixHsNFloquet(nmin, nmax, q))
+    assert Hs.shape == (count, count)
+
+
+        
 def test_matrix_H0NFloquet():
     """Test structure of H0floquet matrix is correct.
     Should only have diagonal entries which follow E = -1/2n^2 + q*freq
@@ -99,6 +120,37 @@ def test_matrix_H0NFloquet():
                         for q2 in qq:
                             if (n != n2) | (l != l2) | (q != q2):
                                 assert m[n][l][q][n2][l2][q2] == 0
+
+def test_H0NFloquet_sample_vals():
+    h = starktools.MatrixH0NFloquet(3,5,[1,1,], [4,3])
+    h0 = starktools.MatrixH0(3,5)
+    assert h[3][0][1][1][3][0][1][1] == h0[3][0][3][0] + 4 + 3
+    assert h[3][0][1][0][3][0][1][0] == h0[3][0][3][0] + 4
+    assert h[3][0][0][1][3][0][0][1] == h0[3][0][3][0] + 3
+    assert h[3][0][0][1][3][0][0][0] == 0
+
+def test_HsNFloquet_sample_vals():
+    h = starktools.MatrixHsNFloquet(3,5,[1,1])
+    qd = starktools.QuantumDefects()
+    assert (h[3][1][0][0][3][0][0][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+    assert (h[3][0][0][0][3][1][0][0] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+    assert (h[3][0][0][0][3][1][0][0] == h[3][1][0][0][3][0][0][0])
+
+    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+
+def test_HfNFloquet_sample_vals():
+    # Double field strength to account for 0.5*f
+    h = starktools.MatrixHfNFloquet(3,5,[1,1], [2,2])
+    qd = starktools.QuantumDefects()
+    assert (h[3][0][0][0][3][1][1][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+    assert (h[3][1][0][0][3][0][1][0] == qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+    assert (h[3][1][1][1][3][0][1][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+    
+    assert (h[3][1][0][1][3][0][1][0] == 2*qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+
+
 
 def test_matrix_H0NFloquet_two_fields():
     """Test structure of H0floquet matrix is correct.
@@ -169,7 +221,7 @@ def test_compare_HsNFloquet_HsFloquet():
     mH_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
     mH_NFloquet = starktools.MatrixHsNFloquet(nmin, nmax, [q])
 
-    assert  np.all(np.asarray(mH_Floquet) == np.asarray(mH_NFloquet))
+    np.testing.assert_array_equal(np.asarray(mH_Floquet), np.asarray(mH_NFloquet))
 
 def test_compare_HfNFloquet_HfFloquet():
     nmin = 1
@@ -180,7 +232,7 @@ def test_compare_HfNFloquet_HfFloquet():
     mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q))
     mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1]))*2
 
-    assert  np.all(mf_Floquet == mf_NFloquet)
+    np.testing.assert_array_equal(mf_Floquet, mf_NFloquet)
 
 
 

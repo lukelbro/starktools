@@ -53,7 +53,7 @@ class MatrixHs(Matrix):
 
                             try:
                                 test = mm[i][l1][j][l2] # Check for entry
-                                angularElem = ((l2 + 1)**2 - m**2)/((2*l2+3)*(2*l2+1))
+                                angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
                                 angularElem = sqrt(angularElem)
                                 mm[i][l1][j][l2] = radialInt * angularElem
                             except KeyError:
