@@ -52,12 +52,20 @@ def test_qqbasis():
 
 def test_nlqqbasis():
     nmin = 3
-    nmax = 4
+    nmax = 5
     qmaxs = [1,1]
     basis = []
     for n, l, q1, q2 in starktools.nlqqbasis(nmin, nmax, qmaxs):
         basis.append((n, l, q1, q2))
     assert basis[0] == (3, 0, -1, -1)
+    # check for value in the middle
+    value1 = (3, 0, 1, 1)
+    sucess = False
+    for i in starktools.nlqqbasis(3,5,[1,1]):
+        if i == value1:
+            sucess = True
+    assert sucess == True
+            
 
 def test_matrix_H0NFloquet():
     """Test structure of H0floquet matrix is correct.
@@ -508,7 +516,7 @@ def test_ac_starkshift_two_ac_field3():
 
     nmin = 54
     nmax = 58
-    q = [3,3]
+    q = [1,1]
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 8637175913* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.01, 0.01]
 
@@ -522,7 +530,7 @@ def test_ac_starkshift_two_ac_field3():
 
     ind56s = find_eigen(56, 0, val, offset=-rabi2/2)
     
-    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi1/2, abs=300)
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi1/2, abs=200)
     assert (-1060115473616.9417 - val[ind56s]) == approx(rabi2/2, abs=300)
 
 
@@ -557,9 +565,9 @@ def test_ac_starkshift_three_ac_fields():
 
     assert rabi/2 == 1571675.449592038
     nmin = 55
-    nmax = 56
-    q = [2,2]
-    freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
+    nmax = 55
+    q = [5,5]
+    freq = [9.11857e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118566e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.1/2, 0.1/2]
 
     h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
@@ -571,7 +579,7 @@ def test_ac_starkshift_three_ac_fields():
     ind55s = find_eigen(55, 0, val, offset=-rabi/2)
     
     # Will not work as frequencies are commenserate!
-    assert (-1099228472064.9489  - val[ind55s]) != approx(rabi/2, abs=1000)
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=1000)
 
 
 
