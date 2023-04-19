@@ -1,7 +1,6 @@
 from .matrix import Matrix
 from .tools import Tools
 from math import sqrt
-from numba import jit
 
 class MatrixH0(Matrix):
     def __init__(self, nmin: int, nmax: int, defects = {}):
