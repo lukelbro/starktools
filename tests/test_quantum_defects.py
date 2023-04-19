@@ -54,3 +54,28 @@ def test_calc_matrix_element():
     assert element == approx(1190, abs=10)
     element = qd.calc_matrix_element(55, 1, 56, 0, 70)
     assert element == approx(1190, abs=10)
+
+def test_forbidden():
+    qd = starktools.QuantumDefects(defects)
+    assert qd.calc_matrix_element(13, 0, 13, 2, 19) == 0
+
+def test_hermitian():
+    wf1  = starktools.Tools.numerov(13, 1, 19)
+    wf2  = starktools.Tools.numerov(13, 0, 19)
+    
+    radialInt1 = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
+    radialInt2 = starktools.Tools.numerov_calc_matrix_element(wf2, wf1)
+    assert (radialInt1 == radialInt2)
+
+    qd = starktools.QuantumDefects(defects)
+    n1 = 13
+    ns1 = n1 - qd._get_qd(13, 0)
+    ns2 = n1 - qd._get_qd(13, 1)
+    wf1  = starktools.Tools.numerov(ns1, 1, 19)
+    wf2  = starktools.Tools.numerov(ns2, 0, 19)
+    radialInt1 = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
+    radialInt2 = starktools.Tools.numerov_calc_matrix_element(wf2, wf1)
+    assert (radialInt1 == radialInt2)
+
+
+

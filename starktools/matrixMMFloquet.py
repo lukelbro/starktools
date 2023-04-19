@@ -147,6 +147,7 @@ class MatrixHsNFloquet(MatrixNFloquet):
                                 except KeyError:
                                     pass
 
+
             self.matrix = mm
 
 class MatrixHfNFloquet(MatrixNFloquet):
@@ -215,7 +216,6 @@ class MatrixHfNFloquet(MatrixNFloquet):
                                 set_by_path(mm, basis, v1)
 
 
-                    
                                 v2 = 0
                                 for id in fieldid:
                                     v2 += 0.5*value2*famps[int(id)]
@@ -224,6 +224,7 @@ class MatrixHfNFloquet(MatrixNFloquet):
                                 b2 = (n2, l2) + tuple(qelement2)  
                                 basis = b2 + b1
                                 set_by_path(mm, basis, v2)
+                                
 
     
         self.matrix = mm

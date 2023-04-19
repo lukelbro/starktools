@@ -326,6 +326,54 @@ def test_matrix_HfNFloquet():
                                         print(n,l,q,n2,l2,q2)
                                     assert m[n][l][q][n2][l2][q2] != 0
 
+
+def test_matrix_HfNFloquet_two_colors():
+    """Test structure of HfFloquet matrix is correct.
+    In the Floquet basis, the time-dependent component of the field couples states for
+    which q` = q ± 1, and l` = l ± 1
+    """
+
+    def matrix_elm(basis, f1, f2, nmax):
+        n1, l1, qa1, qb1, n2, l2, qa2, qb2 = basis
+        val = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
+
+        elm = 0
+        if np.abs(qa1-qa2) == 1:
+            elm += 0.5*val*f1
+        if np.abs(qb1-qb2) == 1:
+            elm += 0.5*val*f2
+        return elm
+
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
+    }
+    qd = starktools.QuantumDefects(defects)
+
+
+    nmin = 13
+    nmax = 19
+    q = (1,1)
+    famps = (12, 0)
+
+    m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps, defects=defects)
+    
+
+    for b1 in starktools.nlqqbasis(nmin, nmax, q):
+        n1, l1, qa1, qb1 = b1
+        for b2 in starktools.nlqqbasis(nmin, nmax, q):
+            n2, l2, qa2, qb2 = b2
+            if np.abs(l1-l2)==1:
+                if np.abs(qa1-qa2) == 1 or np.abs(qb1-qb2) == 1:
+                    elm = matrix_elm(b1+b2, famps[0], famps[1], nmax)
+                    assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == elm
+
+
 def test_init_NFlouet_with_single_ac_fields():
     nmin = 5
     nmax = 8

@@ -1,5 +1,7 @@
 from .tools import Tools
 from math import sqrt
+import numpy as np
+
 class QuantumDefects:
     def __init__(self, defects = {}):
         self.__dict__['defects'] = defects
@@ -27,6 +29,8 @@ class QuantumDefects:
         Calculates the dipole transition moment between two states, including the angular
         and radial componenets.
         """
+        if np.abs(l1 - l2) != 1:
+            return 0
         # Account for Quantum defects
         ns1 = n1 - self._get_qd(n1, l1)
         ns2 = n2 - self._get_qd(n2, l2)
