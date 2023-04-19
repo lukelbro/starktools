@@ -203,122 +203,30 @@ class MatrixHfNFloquet(MatrixNFloquet):
                             value2 = radialInt * angularElem
                                                       
                             for qelement1, qelement2, fieldid in qq:
-                                try:
+                                
                                     
-                                    v1 = 0
-                                    for id in fieldid:
-                                        v1 += 0.5*value1*famps[int(id)]
+                                v1 = 0
+                                for id in fieldid:
+                                    v1 += 0.5*value1*famps[int(id)]
 
-                                    b1 = (n1, l1) + tuple(qelement1)
-                                    b2 = (n2, l2) + tuple(qelement2)  
-                                    basis = b1 + b2
-                                    set_by_path(mm, basis, v1)
-                                    
-                                    # b1 = (n1, l1) + tuple(qelement2)
-                                    # b2 = (n2, l2) + tuple(qelement1)  
-                                    # basis = b1 + b2
-                                    # set_by_path(mm, basis, v1)
+                                b1 = (n1, l1) + tuple(qelement1)
+                                b2 = (n2, l2) + tuple(qelement2)  
+                                basis = b1 + b2
+                                set_by_path(mm, basis, v1)
 
-                                except KeyError:
-                                    pass
-                                try:
-                                    v2 = 0
-                                    for id in fieldid:
-                                        v2 += 0.5*value2*famps[int(id)]
 
-                                    b1 = (n1, l1) + tuple(qelement1)
-                                    b2 = (n2, l2) + tuple(qelement2)  
-                                    basis = b2 + b1
-                                    set_by_path(mm, basis, v2)
+                    
+                                v2 = 0
+                                for id in fieldid:
+                                    v2 += 0.5*value2*famps[int(id)]
 
-                                    # b1 = (n1, l1) + tuple(qelement2)
-                                    # b2 = (n2, l2) + tuple(qelement1)  
-                                    # basis = b2 + b1
-                                    # set_by_path(mm, basis, value2)
-                                except KeyError:
-                                    pass
+                                b1 = (n1, l1) + tuple(qelement1)
+                                b2 = (n2, l2) + tuple(qelement2)  
+                                basis = b2 + b1
+                                set_by_path(mm, basis, v2)
+
     
         self.matrix = mm
-# class MatrixHfNFloquet(MatrixNFloquet):
-#     def __init__(self, nmin: int, nmax: int, q: list, fieldnum:int, defects = {}):
-#         self.__dict__['nmin'] = nmin
-#         self.__dict__['nmax'] = nmax
-#         self.__dict__['qmaxs'] = q
-#         self.__dict__['defects'] = defects
-
-#         # Make HF array
-#         m = 0
-#         mm = self.gen_matrix_empty()
-
-#         elems = []
-#         for i in range(self.nmax-1):
-#             elem = (i, i+1)
-#             elems.append(elem)
-
-#         for elem in elems:
-#             l1 = elem[0]
-#             l2 = elem[1]
-        
-#             for n1 in mm.keys():
-#                 if l1 < n1:
-#                     ns1 = n1 - self._get_qd(n1, l1)
-#                     wf1 = Tools.numerov(ns1, l1, self.nmax)
-
-#                     b1 = (n1, l1) + tuple([0]*len(self.qmaxs))
-#                     b2 = get_by_path(mm, b1)
-
-#                     for n2 in b2.keys():
-#                         if l2 < n2:
-#                             ns2 = n2 - self._get_qd(n2, l2)
-#                             wf2 = Tools.numerov(ns2, l2, self.nmax)
-#                             radialInt = Tools.numerov_calc_matrix_element(wf1, wf2)
-                            
-#                             angularElem = (l2**2 - m**2)/((2*l2+1)*(2*l2-1))
-#                             angularElem = sqrt(angularElem)
-#                             value1 = radialInt * angularElem
-
-#                             angularElem = ((l1 + 1)**2 - m**2)/((2*l1+3)*(2*l1+1))
-#                             angularElem = sqrt(angularElem)
-#                             value2 = radialInt * angularElem
-
-#                             qmax = self.qmaxs[fieldnum]
-
-
-#                             q = -qmax
-#                             while q <= qmax:
-#                                 qelement1 = np.zeros(len(self.qmaxs))
-#                                 qelement1[fieldnum] = q
-
-#                                 qelement2 = np.zeros(len(self.qmaxs))
-#                                 qelement2[fieldnum] = q + 1
-    
-#                                 try:
-#                                     b1 = (n1, l1) + tuple(qelement1)
-#                                     b2 = (n2, l2) + tuple(qelement2)  
-#                                     basis = b1 + b2
-#                                     set_by_path(mm, basis, value1)
-                                    
-#                                     b1 = (n1, l1) + tuple(qelement2)
-#                                     b2 = (n2, l2) + tuple(qelement1)  
-#                                     basis = b1 + b2
-#                                     set_by_path(mm, basis, value1)
-#                                 except KeyError:
-#                                     pass
-#                                 try:
-#                                     b1 = (n1, l1) + tuple(qelement1)
-#                                     b2 = (n2, l2) + tuple(qelement2)  
-#                                     basis = b2 + b1
-#                                     set_by_path(mm, basis, value2)
-
-#                                     b1 = (n1, l1) + tuple(qelement2)
-#                                     b2 = (n2, l2) + tuple(qelement1)  
-#                                     basis = b2 + b1
-#                                     set_by_path(mm, basis, value2)
-#                                 except KeyError:
-#                                     pass
-#                                 q += 1
-#         self.matrix = mm
-
 
 
 def get_by_path(root, items):

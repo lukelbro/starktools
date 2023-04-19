@@ -311,7 +311,7 @@ def test_matrix_HfNFloquet():
             for q in  qq:
                 assert m[n][l][q][n][l][q] == 0
     
-    # Check correct terms are coupled correctly
+    # Check correct terms are coupled
     for n in nn:
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
