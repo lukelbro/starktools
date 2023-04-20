@@ -36,7 +36,9 @@ class Tools:
                 iStart = i - 2
                 rStart1 = rMax
             else:
-                i = int(floor(log(rMax / (2 * n * (n + 15))) / h))
+                i = int(floor(log(rMax / (2 * n * (n + 15))) / h)) # this step results in the matrix not being perfectly hermitian!
+                                                                    # as the grid is discrete so the choice in grid position results
+                                                                    # in an approximation!
                 iStart = i
                 rStart1 = rMax * exp(-i*h)
                 i = i+2
@@ -89,15 +91,13 @@ class Tools:
         Calculate the radial component of the transition matrix element.
         Accepts two numrov integration data sets as tuples.
         """
+        imin = max(wf1.start, wf2.start)
+        imax = min(wf1.end, wf2.end)
 
-        # Find range of points for which there are values for both wavefunctions
-        iStart = max(wf1.start, wf2.start) # This does not work!!
-        iEnd   = min(wf1.end, wf2.end)
-
-
-        y1 = wf1.y[iStart:iEnd]
-        y2 = wf2.y[iStart:iEnd]
-        r = wf1.r[iStart:iEnd]
+        y1 = wf1.y[imin:imax]
+        y2 = wf2.y[imin:imax]
+        r =  wf1.r[imin:imax]
+    
 
         # Calculate matrix element
         M = np.sum(y1 * y2 * r**3)

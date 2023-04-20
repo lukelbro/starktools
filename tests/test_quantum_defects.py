@@ -20,6 +20,22 @@ def test_numerov_method():
     wf1 = starktools.Tools.numerov(19, 0 ,19)
     assert wf1.y[100] == 0.00013208511620903889
 
+def test_numerov_method_consistent_r():
+    qd = starktools.QuantumDefects(defects)
+    n1 = 13
+    ns1 = n1 - qd._get_qd(13, 0)
+    ns2 = n1 - qd._get_qd(13, 1)
+    qd = starktools.QuantumDefects(defects)
+
+    wf1  = starktools.Tools.numerov(ns1, 1, 19)
+    wf2  = starktools.Tools.numerov(ns2, 0, 19)
+    
+    iStart = max(wf1.start, wf2.start) 
+    iEnd   = min(wf1.end, wf2.end)
+
+    r1 = wf1.r[iStart:iEnd]
+    r2 = wf2.r[iStart:iEnd]
+    np.testing.assert_almost_equal(r1, r2)
 
 def test_numerov():
     wf1  = starktools.Tools.numerov(19, 0, 19)
@@ -59,14 +75,29 @@ def test_forbidden():
     qd = starktools.QuantumDefects(defects)
     assert qd.calc_matrix_element(13, 0, 13, 2, 19) == 0
 
-def test_hermitian():
-    wf1  = starktools.Tools.numerov(13, 1, 19)
-    wf2  = starktools.Tools.numerov(13, 0, 19)
-    
-    radialInt1 = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
-    radialInt2 = starktools.Tools.numerov_calc_matrix_element(wf2, wf1)
-    assert (radialInt1 == radialInt2)
 
+def test_integral_r_comparison():
+    qd = starktools.QuantumDefects(defects)
+    n1 = 13
+    l1 = 1
+    n2 = 13
+    l2 = 0
+    nmax = 19
+
+    ns1 = n1 -  qd._get_qd(n1, l1)
+    ns2 = n2 -  qd._get_qd(n2, l2)
+
+    # Numerov integrals
+    wf1 = starktools.Tools.numerov(ns1, l1, nmax)
+    wf2 = starktools.Tools.numerov(ns2, l2, nmax)
+
+    imin = max(wf1.start, wf2.start)
+    imax = min(wf1.end, wf2.end)
+
+    np.testing.assert_almost_equal(wf1.r[imin:imax], wf2.r[imin:imax])
+
+
+def test_hermitian():
     qd = starktools.QuantumDefects(defects)
     n1 = 13
     ns1 = n1 - qd._get_qd(13, 0)
@@ -75,7 +106,7 @@ def test_hermitian():
     wf2  = starktools.Tools.numerov(ns2, 0, 19)
     radialInt1 = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
     radialInt2 = starktools.Tools.numerov_calc_matrix_element(wf2, wf1)
-    assert (radialInt1 == radialInt2)
+    assert (radialInt1 == approx(radialInt2, rel=1e-10) )
 
 
 

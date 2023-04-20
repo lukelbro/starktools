@@ -358,7 +358,7 @@ def test_matrix_HfNFloquet_two_colors():
 
     nmin = 13
     nmax = 19
-    q = (1,1)
+    q = (2,2)
     famps = (12, 0)
 
     m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps, defects=defects)
@@ -371,7 +371,7 @@ def test_matrix_HfNFloquet_two_colors():
             if np.abs(l1-l2)==1:
                 if np.abs(qa1-qa2) == 1 or np.abs(qb1-qb2) == 1:
                     elm = matrix_elm(b1+b2, famps[0], famps[1], nmax)
-                    assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == elm
+                    assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == approx(elm, rel=10e-10)
 
 
 def test_init_NFlouet_with_single_ac_fields():
