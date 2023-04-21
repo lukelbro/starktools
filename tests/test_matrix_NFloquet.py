@@ -66,6 +66,27 @@ def test_nlqqbasis():
             sucess = True
     assert sucess == True
            
+def test_nlqqbasis_explicit():
+    nmin = 50
+    nmax = 55
+    qmaxs = [4,4]
+    basis = []
+    for n, l, q1, q2 in starktools.nlqqbasis(nmin, nmax, qmaxs):
+        basis.append((n, l, q1, q2))
+
+    basis = set(basis)
+
+    nn = np.arange(nmin, nmax+1, dtype=np.int64)
+    for n in nn:
+        ll = np.arange(0, n, dtype=np.int64)
+        for l in ll:
+            for q1 in np.arange(-qmaxs[0], qmaxs[0]):
+                for q2 in np.arange(-qmaxs[1], qmaxs[1]):
+                    b1 = (n, l, q1, q2)
+                    assert (b1 in basis) == True
+                       
+                        
+
 def test_matrix_dimensions():
     nmin = 3
     nmax = 5
@@ -189,6 +210,24 @@ def test_matrix_H0NFloquet_two_fields():
                                 for qb2 in qq2:
                                     if (n != n2) | (l != l2) | (qa != qa2) | (qb != qb2) :
                                         assert m[n][l][qa][qb][n2][l2][qa2][qb2] == 0
+
+def test_matrix_H0NFloquet_two_fields_test_2():
+    """Test structure of H0floquet matrix is correct.
+    Should only have diagonal entries which follow E = -1/2n^2 + q*freq
+    """
+    nmin = 1
+    nmax = 10
+    q = [2,2]
+    freq = [2,5]
+    m = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
+    
+    for n1, l1, qa1, qb1 in starktools.nlqqbasis(nmin, nmax, q):
+        for n2, l2, qa2, qb2 in starktools.nlqqbasis(nmin, nmax, q):
+            if (n1, l1, qa1, qb1) == (n2, l2, qa2, qb2):
+                assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == -0.5 * float(n1)**(-2) + qa1 * freq[0] + qb1 * freq[1]
+            else:
+                assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == 0
+
 
 def test_compare_H0NFloquet_H0Floquet():
     nmin = 1
@@ -359,7 +398,7 @@ def test_matrix_HfNFloquet_two_colors():
     nmin = 13
     nmax = 19
     q = (2,2)
-    famps = (12, 0)
+    famps = (12, 0.1)
 
     m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps, defects=defects)
     
