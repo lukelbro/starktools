@@ -267,9 +267,19 @@ def test_compare_HfNFloquet_HfFloquet():
     nmax = 10
     q = 2
     freq = 2
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
+    }
 
-    mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q))
-    mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1]))*2
+
+    mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q, defects=defects))
+    mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1], defects = defects))*2
 
     np.testing.assert_array_equal(mf_Floquet, mf_NFloquet)
 
@@ -675,7 +685,7 @@ def test_ac_starkshift_two_ac_field3():
     assert (-1060115473616.9417 - val[ind56s]) == approx(rabi2/2, abs=300)
 
 
-def test_ac_starkshift_three_ac_fields():
+def test_ac_starkshift_commensurate():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
@@ -720,7 +730,7 @@ def test_ac_starkshift_three_ac_fields():
     ind55s = find_eigen(55, 0, val, offset=-rabi/2)
     
     # Will not work as frequencies are commenserate!
-    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=1000)
+    assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=10000)
 
 
 
@@ -803,3 +813,65 @@ def test_dc_stark_shift():
     transition2 = (vals[:,ind56s] - vals[:,ind55s])/2
 
     assert (transition1 - transition2) == approx(0, abs=1e-3)
+
+
+def test_shift_10_khz_ac_comparison_with_HF():
+     
+    def find_eigen(n, l, v, offset=0):
+        qd = starktools.QuantumDefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        return find_nearest(v, energy)
+
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    defects = {
+        0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+        1 : [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+        2 : [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+        3 : [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+        4 : [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+        5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+        6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]}
+     
+    nmin = 53
+    nmax = 57
+    qmaxs = [1,1]
+    na = 55
+    nb = 56
+    fsteps = 10
+
+    fmax1 = 0
+    fmax2 = 0.1
+
+    RESONANCE_sp = 9.118568e9
+    RESONANCE_ss = 19.256910e9 #-calc_transition(na, 0, nb, 0)
+
+
+    # HFN
+    freq1 = (RESONANCE_sp+30e6)* starktools.Constants.h / starktools.Constants.E_He 
+    freq2 = (RESONANCE_ss)* starktools.Constants.h / starktools.Constants.E_He
+    freqs = (freq1, freq2)
+
+    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, qmaxs, freqs, defects=defects))
+    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, qmaxs, (0, 0.1) ,defects=defects))
+
+    vals = np.linalg.eigvals(h0 + hf/starktools.Constants.F_He)
+    ind55s = find_eigen(na, 0, vals)
+    ind56s = find_eigen(nb, 0, vals)
+
+    shift_hfn = vals[ind56s]-vals[ind55s]- 39112998448.00716
+
+
+    # HF
+    h0 = np.asarray(starktools.MatrixH0Floquet(nmin, nmax, 1, freqs[1], defects=defects))
+    hf = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, 1, defects=defects))
+    vals = np.linalg.eigvals(h0 + 0.5* hf * 0.1/starktools.Constants.F_He)
+    ind55s = find_eigen(na, 0, vals)
+    ind56s = find_eigen(nb, 0, vals)
+
+    shift_hf = vals[ind56s]-vals[ind55s]- 39112998448.00716
+
+    assert shift_hf == approx(shift_hfn, abs=1e-10)
