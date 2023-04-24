@@ -173,9 +173,10 @@ class MatrixHfNFloquet(MatrixNFloquet):
                 b1 = np.array(q1)
                 b2 = np.array(q2)
                 b = np.abs(b1 - b2)
-                if np.any(b == 1):
+                if np.sum(b) == 1:
                     fieldid = np.where(b == 1)[0]
-                    qq.append((q1, q2, fieldid))
+                    if fieldid.size == 1:  #only couple if a single fourier side band is differnt by one
+                        qq.append((q1, q2, fieldid))
 
         for elem in elems:
             l1 = elem[0]

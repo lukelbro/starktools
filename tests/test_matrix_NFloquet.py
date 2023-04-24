@@ -169,7 +169,7 @@ def test_HfNFloquet_sample_vals():
     assert (h[3][1][0][0][3][0][1][0] == qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
     assert (h[3][1][1][1][3][0][1][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
     
-    assert (h[3][1][0][1][3][0][1][0] == 2*qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+    assert (h[3][1][0][1][3][0][1][0] == 0)
 
 
 
@@ -377,6 +377,8 @@ def test_matrix_HfNFloquet_two_colors():
         val = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
 
         elm = 0
+        if np.abs(qa1-qa2) + np.abs(qb1-qb2) != 1:
+            return elm
         if np.abs(qa1-qa2) == 1:
             elm += 0.5*val*f1
         if np.abs(qb1-qb2) == 1:
@@ -462,7 +464,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     elm = radint * angularElem
 
     val = 0.5*elm*f[0] + 0.5*elm*f[1]
-    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == val)
+    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == 0)
 
     n1 = 2
     l1 = 0
@@ -473,7 +475,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     ma2 = 2
     mb2 = 2
     
-    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == val)
+    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == 0)
 
 
 def test_ac_starkshift_one_ac_field1():
