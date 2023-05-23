@@ -24,3 +24,7 @@ rabi = electricDipoleMoment * estrength/st.Constants.hbar
 def calc_transition(n1, l1, n2, l2):
     return st.Constants.c/(1/((qd.energy_level(n1, l1)*st.Constants.R_He  - qd.energy_level(n2, l2)*st.Constants.R_He)))*10**-9
 ```
+
+```
+1/((calc_transition(55,0 , 56, 0)/starktools.Constants.c) + 1/786.8166e-9)*10**9
+```
