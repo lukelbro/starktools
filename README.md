@@ -26,5 +26,5 @@ def calc_transition(n1, l1, n2, l2):
 ```
 
 ```
-1/((calc_transition(55,0 , 56, 0)/starktools.Constants.c) + 1/786.8166e-9)*10**9
+1/((calc_transition(56,0 , 55, 0)*10**9/starktools.Constants.c) + 1/(786.8166e-9))*10**9
 ```
