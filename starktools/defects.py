@@ -24,7 +24,7 @@ class QuantumDefects:
         return - (n - self._get_qd(n,l))**(-2)
 
 
-    def calc_matrix_element(self, n1, l1, n2, l2, nmax):
+    def calc_matrix_element(self, n1, l1, n2, l2, nmax, ml=0):
         """
         Calculates the dipole transition moment between two states, including the angular
         and radial componenets.
@@ -43,14 +43,13 @@ class QuantumDefects:
         radialInt = Tools.numerov_calc_matrix_element(wf1, wf2)
 
         # Angular component
-        m = 0
         angularElem = 0
         if l1>l2:
-            angularElem = ((l2 + 1)**2 - m**2)/((2*l2+3)*(2*l2+1))
+            angularElem = ((l2 + 1)**2 - ml**2)/((2*l2+3)*(2*l2+1))
             angularElem = sqrt(angularElem)
 
         if l1<l2:
-            angularElem = (l2**2 - m**2)/((2*l2+1)*(2*l2-1))
+            angularElem = (l2**2 - ml**2)/((2*l2+1)*(2*l2-1))
             angularElem = sqrt(angularElem)
 
         return radialInt * angularElem
