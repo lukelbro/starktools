@@ -19,25 +19,7 @@ class MatrixH0(Matrix):
         self.matrix = mm
 
 class MatrixHs(Matrix):
-    def __init__(self, nmin: int, nmax: int, defects={}, m=0):
-        """
-        Initialize the MatrixStark object.
-
-        Args:
-            nmin (int): The minimum value of n.
-            nmax (int): The maximum value of n.
-            defects (dict, optional): A dictionary of defects. Defaults to an empty dictionary.
-            m (int, optional): The value of ml. Defaults to 0.
-
-        Raises:
-            ValueError: If nmax is less than nmin.
-
-        Attributes:
-            nmin (int): The minimum value of n.
-            nmax (int): The maximum value of n.
-            defects (dict): A dictionary of defects.
-            matrix (dict): The matrix representation of the Stark Hamiltonian.
-        """
+    def __init__(self, nmin: int, nmax: int, defects={}):
         if nmin > nmax:
             raise ValueError('nmax should be greater than nmin')
 
@@ -51,7 +33,8 @@ class MatrixHs(Matrix):
         for i in range(self.nmax - 1):
             elem = (i, i + 1)
             elems.append(elem)
-
+        
+        m = 0
         for elem in elems:
             l1 = elem[0]
             l2 = elem[1]

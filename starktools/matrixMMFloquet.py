@@ -6,6 +6,7 @@ import numpy as np
 from functools import reduce
 import operator
 import itertools
+from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
 
 class MatrixNFloquet(Matrix):
     def __init__(self, nmin: int, nmax: int, q: list):
