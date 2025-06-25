@@ -7,3 +7,4 @@ from .defects import QuantumDefects
 from .tools import Tools
 from .matrixMMFloquet import MatrixNFloquet, MatrixH0NFloquet, MatrixHsNFloquet, MatrixHfNFloquet
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
+from .matrixFinestructure import *
