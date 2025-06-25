@@ -338,7 +338,7 @@ class MatrixFsH0Floquet(MatrixFsFloquet):
         matrix = np.zeros((self.num_states, self.num_states))
         for i, state in enumerate(self.states):
             n, l, s, j, m, q = state
-            matrix[i,i] = quantumdefect_fs.qd.energylevel(n, l, s, j) + self.frequency * q
+            matrix[i,i] = 0.5 *quantumdefect_fs.energylevel(n, l, s, j) + self.frequency * q
         return matrix
     
 class MatrixFsHsFloquet(MatrixFsFloquet):    
