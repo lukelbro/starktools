@@ -198,3 +198,43 @@ def test_matrix_fshs():
     M = starktools.MatrixFsHs(8,9,1,1) 
 
     assert np.equal(M_poor.matrix, M.matrix).all()
+
+def test_matrix_fs_H0_floquet():
+    freq = 99
+    M = starktools.MatrixFsH0Floquet(8,9,1,0,1,freq)
+    for i in range(M.matrix.shape[0]):
+        state1 = M.convert_index_to_state(i)
+        n1, l1, s1, j1, mj1, q1 = state1
+        for j in range(M.matrix.shape[1]):
+            if i == j:
+                assert M[i,j] == 0.5 * starktools.quantumdefect_fs.energylevel(n1, l1, s1, j1) + freq * q1
+            else:
+                assert M[i,j] == 0
+
+def test_matrix_fs_Hf_floquet():
+    freq = 99
+    M = starktools.MatrixFsHfFloquet(8,9,1,0,1,freq)
+    for i in range(M.matrix.shape[0]):
+        state1 = M.convert_index_to_state(i)
+        n1, l1, s1, j1, mj1, q1 = state1
+        for j in range(M.matrix.shape[1]):
+            state2 = M.convert_index_to_state(j)
+            n2, l2, s2, j2, mj2, q2 = state2
+            if np.abs(q1-q2)==1:
+                assert M.matrix[i,j] == 0.5 * starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
+            else:
+                assert M.matrix[i,j] == 0
+
+def test_matrix_fs_Hs_floquet():
+    freq = 99
+    M = starktools.MatrixFsHsFloquet(8,9,1,0,1,freq)
+    for i in range(M.matrix.shape[0]):
+        state1 = M.convert_index_to_state(i)
+        n1, l1, s1, j1, mj1, q1 = state1
+        for j in range(M.matrix.shape[1]):
+            state2 = M.convert_index_to_state(j)
+            n2, l2, s2, j2, mj2, q2 = state2
+            if np.abs(q1-q2)==0:
+                assert M.matrix[i,j] ==  starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
+            else:
+                assert M.matrix[i,j] == 0
