@@ -389,7 +389,7 @@ class MatrixFsHfFloquet(MatrixFsFloquet):
                             n1, l1, s, j1, mj1, q1 = self.states[i]
                             for j in lq_to_indices[key2]:
                                 n2, l2, s, j2, mj2, q2 = self.states[j]
-                                matrix[i, j] = quantumdefect_fs.dipoleMatrixElement(
+                                matrix[i, j] = 0.5 * quantumdefect_fs.dipoleMatrixElement(
                                     n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax
                                 )
         return matrix
