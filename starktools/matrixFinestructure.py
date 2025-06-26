@@ -239,7 +239,7 @@ class basis_fs:
     def generate_atom_levels_fs_floquet(n_min, n_max, S, qmax, lmax=None):
         for n, l, S, j, m_j in basis_fs.generate_atom_levels_fs(n_min, n_max, S, lmax=None):
             q = - qmax
-            while q < qmax:
+            while q <= qmax:
                 yield (n, l, S, j, m_j, q)
                 q += 1
 
