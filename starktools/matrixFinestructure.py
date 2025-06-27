@@ -86,7 +86,7 @@ def cached(func):
     
 class quantumdefect_fs:
     @staticmethod
-    def clear_all_cache():
+    def clear_cache():
         for func in _cached_functions:
             func.cache_clear()
 
