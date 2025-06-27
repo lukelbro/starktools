@@ -3,7 +3,7 @@ import numpy as np
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
 from .tools import Tools
 from .constants import Constants
-from functools import cache
+import functools
 from typing import Callable, Iterator, Tuple, Any
 
 DEFECTS = {
@@ -77,7 +77,19 @@ DEFECTS = {
     }
 }
 
+_cached_functions = []
+
+def cached(func):
+    cached_func = functools.cache(func)
+    _cached_functions.append(cached_func)
+    return cached_func
+    
 class quantumdefect_fs:
+    @staticmethod
+    def clear_all_cache():
+        for func in _cached_functions:
+            func.cache_clear()
+
     def calc_defect(n, l, s, j):
         '''where $n^* = n - \delta(n^*)$, and the quantum defect $\delta(n^*)$ is defined recursively through the Ritz expansion
             \begin{equation}
@@ -114,7 +126,7 @@ class quantumdefect_fs:
         return - (n - quantumdefect_fs.calc_defect(n,l,s,j))**(-2)
     
     @staticmethod
-    @cache
+    @cached
     def radial_integral(n1, l1, s1, j1, n2, l2, s2, j2, nmax):
         """
         Calculate the radial integral of two electron wavefunctions considering quantum defects.
@@ -156,12 +168,12 @@ class quantumdefect_fs:
         return radialInt
     
     @staticmethod
-    @cache
+    @cached
     def numerov(n, l, nmax):
             return Tools.numerov(n, l, nmax)
 
     @staticmethod
-    @cache
+    @cached
     def angular_integral(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
         max_l = np.max([l1, l2])
         phase = (-1)**(-mj2+s+max_l)
@@ -173,7 +185,7 @@ class quantumdefect_fs:
         return float(phase * A * W6 * W3)
     
     @staticmethod
-    @cache
+    @cached
     def dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
         """
         Calculate the dipole matrix element for a transition between two fine-structure states in an atom. 
