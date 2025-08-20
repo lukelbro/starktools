@@ -265,7 +265,7 @@ class basis_fs:
             current += step
 
     @staticmethod
-    def generate_atom_levels_fs(n_min, n_max, S, lmax=None):
+    def generate_atom_levels_fs(n_min, n_max, S, lmax=None, mjmax=None):
         """
         Generate quantum numbers for atomic levels in fine structure.
 
@@ -277,6 +277,7 @@ class basis_fs:
         n_max (int): The maximum principal quantum number.
         S (float): The spin quantum number.
         lmax (int, optional): The maximum orbital angular momentum quantum number. Defaults to None.
+        mjmax (float, optional): The maximum magnetic quantum number. Defaults to None.
 
         Yields:
         tuple: A tuple representing the quantum numbers (n, l, S, j, m_j) for each level.
@@ -290,28 +291,29 @@ class basis_fs:
                 if lmax is None or l <= lmax:
                     for j in basis_fs.float_range(abs(l - S), l + S + 1, 1):
                         for m_j in basis_fs.float_range(-j, j + 1, 1):
-                            yield n, l, S, j, m_j
+                            if mjmax is None or abs(m_j) <= mjmax:
+                                yield n, l, S, j, m_j
     
     @staticmethod
-    def generate_atom_levels_fs_floquet(n_min, n_max, S, qmax, lmax=None):
-        for n, l, S, j, m_j in basis_fs.generate_atom_levels_fs(n_min, n_max, S, lmax=None):
+    def generate_atom_levels_fs_floquet(n_min, n_max, S, qmax, lmax=None, mjmax=None):
+        for n, l, S, j, m_j in basis_fs.generate_atom_levels_fs(n_min, n_max, S, lmax=lmax, mjmax=mjmax):
             q = - qmax
             while q <= qmax:
                 yield (n, l, S, j, m_j, q)
                 q += 1
 
-    
-
 
 class MatrixFs:
-    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, basis=None, frequency: float = None):
+    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, basis=None, frequency: float = None, lmax=None, mjmax=None):
         self.nmin = nmin
         self.nmax = nmax
         self.S = S
         self.polarization = polarization
         self.frequency = frequency
+        self.lmax = lmax
+        self.mjmax = mjmax
         if basis is None:
-            self.basis = basis_fs.generate_atom_levels_fs(nmin, nmax, S)
+            self.basis = basis_fs.generate_atom_levels_fs(nmin, nmax, S, lmax=lmax, mjmax=mjmax)
         else:
             self.basis = basis
         self.states, self.lookuptable = self.generate_matrix_states()
@@ -384,10 +386,12 @@ class MatrixFsHs(MatrixFs):
         return matrix
     
 class MatrixFsFloquet(MatrixFs):
-    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, frequency: float):
+    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, frequency: float, lmax=None, mjmax=None):
         self.qmax = qmax
         self.frequency = frequency
-        floquet_basis = basis_fs.generate_atom_levels_fs_floquet(nmin, nmax, S, qmax)
+        self.lmax = lmax
+        self.mjmax = mjmax
+        floquet_basis = basis_fs.generate_atom_levels_fs_floquet(nmin, nmax, S, qmax, lmax=lmax, mjmax=mjmax)
         super().__init__(nmin, nmax, S, polarization, basis=floquet_basis, frequency=frequency)
 
 class MatrixFsH0Floquet(MatrixFsFloquet):

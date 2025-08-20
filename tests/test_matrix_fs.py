@@ -238,3 +238,72 @@ def test_matrix_fs_Hs_floquet():
                 assert M.matrix[i,j] ==  starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
             else:
                 assert M.matrix[i,j] == 0
+
+
+def test_mjmax_feature():
+    """Test the mjmax parameter for limiting magnetic quantum numbers in MatrixFsFloquet."""
+    nmin, nmax = 5, 6
+    S = 0.5  # spin-1/2
+    qmax = 1
+    frequency = 1.0
+    polarization = 0
+    
+    # Test without mjmax (should include all possible mj values)
+    matrix_no_limit = starktools.MatrixFsFloquet(nmin, nmax, S, polarization, qmax, frequency)
+    states_no_limit = matrix_no_limit.states
+    mj_values_no_limit = set(state[4] for state in states_no_limit)
+    
+    # Test with mjmax = 0.5 (should limit to |mj| <= 0.5)
+    matrix_limited = starktools.MatrixFsFloquet(nmin, nmax, S, polarization, qmax, frequency, mjmax=0.5)
+    states_limited = matrix_limited.states
+    mj_values_limited = set(state[4] for state in states_limited)
+    
+    # Verify that all mj values in limited case are within the limit
+    for state in states_limited:
+        mj = state[4]
+        assert abs(mj) <= 0.5, f"mj value {mj} exceeds limit of 0.5"
+    
+    # Verify that the limited case has fewer or equal states
+    assert len(states_limited) <= len(states_no_limit)
+    
+    # Verify that all limited mj values are a subset of unlimited mj values
+    assert mj_values_limited.issubset(mj_values_no_limit)
+    
+    # Test that mjmax=0.5 only includes mj values -0.5 and 0.5
+    expected_mj_values = {-0.5, 0.5}
+    assert mj_values_limited == expected_mj_values
+    
+    # Test the matrix functionality still works
+    assert matrix_limited.matrix.shape[0] == len(states_limited)
+    assert matrix_limited.matrix.shape[1] == len(states_limited)
+
+
+def test_mjmax_feature_basis_generation():
+    """Test mjmax parameter in the basis generation functions."""
+    nmin, nmax = 3, 4
+    S = 1  # triplet
+    
+    # Test without mjmax
+    states_no_limit = list(starktools.basis_fs.generate_atom_levels_fs(nmin, nmax, S))
+    mj_values_no_limit = set(state[4] for state in states_no_limit)
+    
+    # Test with mjmax = 1.5
+    states_limited = list(starktools.basis_fs.generate_atom_levels_fs(nmin, nmax, S, mjmax=1.5))
+    mj_values_limited = set(state[4] for state in states_limited)
+    
+    # Verify that all mj values in limited case are within the limit
+    for state in states_limited:
+        mj = state[4]
+        assert abs(mj) <= 1.5, f"mj value {mj} exceeds limit of 1.5"
+    
+    # Test Floquet basis generation with mjmax
+    qmax = 2
+    floquet_states_limited = list(starktools.basis_fs.generate_atom_levels_fs_floquet(nmin, nmax, S, qmax, mjmax=1.5))
+    
+    for state in floquet_states_limited:
+        mj = state[4]
+        assert abs(mj) <= 1.5, f"mj value {mj} exceeds limit of 1.5"
+    
+    # Each regular state should appear (2*qmax + 1) times in Floquet basis
+    expected_floquet_count = len(states_limited) * (2 * qmax + 1)
+    assert len(floquet_states_limited) == expected_floquet_count
