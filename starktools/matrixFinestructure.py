@@ -303,7 +303,7 @@ class basis_fs:
                 q += 1
 
 
-class MatrixFs:
+class MatrixFs():
     def __init__(self, nmin: int, nmax: int, S: float, polarization: int, basis=None, frequency: float = None, lmax=None, mjmax=None):
         self.nmin = nmin
         self.nmax = nmax
