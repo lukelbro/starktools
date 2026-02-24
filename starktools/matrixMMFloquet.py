@@ -3,6 +3,7 @@ from .matrix import Matrix
 from .tools import Tools
 from math import sqrt
 import numpy as np
+import warnings
 from functools import reduce
 import operator
 import itertools
@@ -58,6 +59,11 @@ class MatrixNFloquet(Matrix):
     
 class MatrixH0NFloquet(MatrixNFloquet):
     def __init__(self, nmin: int, nmax: int, q:list, frequencys:list, defects = {}):
+        warnings.warn(
+            "MatrixH0NFloquet is deprecated. Use MatrixH0NFFloquet from matrixNFFloquet_v2.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.__dict__['nmin'] = nmin
         self.__dict__['nmax'] = nmax
         self.__dict__['qmaxs'] = q
@@ -80,6 +86,11 @@ class MatrixH0NFloquet(MatrixNFloquet):
 
 class MatrixHsNFloquet(MatrixNFloquet):
     def __init__(self, nmin: int, nmax: int, q: list, defects = {}):
+        warnings.warn(
+            "MatrixHsNFloquet is deprecated. Use MatrixHsNFFloquet from matrixNFFloquet_v2.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.__dict__['nmin'] = nmin
         self.__dict__['nmax'] = nmax
         self.__dict__['qmaxs'] = q
@@ -153,6 +164,11 @@ class MatrixHsNFloquet(MatrixNFloquet):
 
 class MatrixHfNFloquet(MatrixNFloquet):
     def __init__(self, nmin: int, nmax: int, q: list, famps: list, defects = {}):
+        warnings.warn(
+            "MatrixHfNFloquet is deprecated. Use MatrixHfNFFloquet from matrixNFFloquet_v2.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.__dict__['nmin'] = nmin
         self.__dict__['nmax'] = nmax
         self.__dict__['qmaxs'] = q

@@ -6,5 +6,6 @@ from .matrixFloquet import MatrixH0Floquet, MatrixHsFloquet, MatrixHfFloquet, Ma
 from .defects import QuantumDefects
 from .tools import Tools
 from .matrixMMFloquet import MatrixNFloquet, MatrixH0NFloquet, MatrixHsNFloquet, MatrixHfNFloquet
+from .matrixNFFloquet_v2 import MatrixH0NFFloquet, MatrixHsNFFloquet, MatrixHfNFFloquet
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
 from .matrixFinestructure import *
