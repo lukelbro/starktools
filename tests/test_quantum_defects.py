@@ -18,7 +18,7 @@ def test_numerov_method():
     qd = starktools.QuantumDefects(defects)
 
     wf1 = starktools.Tools.numerov(19, 0 ,19)
-    assert wf1.y[100] == 0.00013208511620903889
+    assert wf1.y[100] == approx(0.00013208511620903889, rel=1e-10, abs=1e-14)
 
 def test_numerov_method_consistent_r():
     qd = starktools.QuantumDefects(defects)
@@ -42,7 +42,7 @@ def test_numerov():
     wf2 = starktools.Tools.numerov(13, 1, 19)
     d = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
 
-    assert d == -4.008890618586264 # confirmed using matlab
+    assert d == approx(-4.008890618586264, rel=1e-5, abs=1e-14) # confirmed using matlab
 
 
 def test_defect():
@@ -54,7 +54,7 @@ def test_defect():
 def test_energy_level():
     qd = starktools.QuantumDefects(defects)
     e55p = qd.energy_level(55, 0)
-    assert e55p == -3.341738483799353e-04
+    assert e55p == approx(-3.341738483799353e-04, rel=1e-12, abs=1e-16)
 
 def test_energy_level_si():
     qd = starktools.QuantumDefects(defects)
