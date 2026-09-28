@@ -1,4 +1,4 @@
-from .context import starktools
+import starktools
 import numpy as np
 from pytest import approx, raises
 

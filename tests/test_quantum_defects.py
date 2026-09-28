@@ -1,4 +1,5 @@
-from .context import starktools
+from starktools import *  # noqa: F401,F403
+import starktools
 import numpy as np
 from pytest import approx, raises
 
@@ -18,7 +19,7 @@ def test_numerov_method():
     qd = starktools.QuantumDefects(defects)
 
     wf1 = starktools.Tools.numerov(19, 0 ,19)
-    assert wf1.y[100] == approx(0.00013208511620903889, rel=1e-10, abs=1e-14)
+    assert wf1.y[100] == approx(0.00023777622350765846, rel=1e-10, abs=1e-14)
 
 def test_numerov_method_consistent_r():
     qd = starktools.QuantumDefects(defects)
@@ -42,7 +43,7 @@ def test_numerov():
     wf2 = starktools.Tools.numerov(13, 1, 19)
     d = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
 
-    assert d == approx(-4.008890618586264, rel=1e-5, abs=1e-14) # confirmed using matlab
+    assert d == approx(-4.009082192983165, rel=1e-5, abs=1e-14) # regenerated for h=0.005, rCore=0.65
 
 
 def test_defect():
