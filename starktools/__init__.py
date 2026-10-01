@@ -2,7 +2,7 @@ from .matrix import Matrix
 from .matrix_base import State, matrix
 from .constants import Constants
 from .matrix_stark import matrixH0, matrixHs
-from .matrixFloquet import MatrixH0Floquet, MatrixHsFloquet, MatrixHfFloquet, MatrixFloquet
+from .matrix_floquet import matrixH0F, matrixHsF, matrixHfF
 from .defects import QuantumDefects, ritz_defect
 from .tools import Tools
 from .matrixMMFloquet import MatrixNFloquet, MatrixH0NFloquet, MatrixHsNFloquet, MatrixHfNFloquet
@@ -25,7 +25,6 @@ __all__ = [
     "Constants",
     "DEFECTS",
     "Matrix",
-    "MatrixFloquet",
     "MatrixFs",
     "MatrixFsFloquet",
     "MatrixFsH0",
@@ -33,13 +32,10 @@ __all__ = [
     "MatrixFsHfFloquet",
     "MatrixFsHs",
     "MatrixFsHsFloquet",
-    "MatrixH0Floquet",
     "MatrixH0NFFloquet",
     "MatrixH0NFloquet",
-    "MatrixHfFloquet",
     "MatrixHfNFFloquet",
     "MatrixHfNFloquet",
-    "MatrixHsFloquet",
     "MatrixHsNFFloquet",
     "MatrixHsNFloquet",
     "MatrixNFloquet",
@@ -49,7 +45,10 @@ __all__ = [
     "basis_fs",
     "matrix",
     "matrixH0",
+    "matrixH0F",
     "matrixHs",
+    "matrixHsF",
+    "matrixHfF",
     "nlbasis",
     "nlqbasis",
     "nlqqbasis",

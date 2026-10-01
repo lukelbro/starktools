@@ -153,21 +153,10 @@ def test_compare_H0NFloquet_H0Floquet():
     q = 2
     freq = 2
 
-    m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-    m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, [q], [freq])
+    m0_Floquet  =  starktools.matrixH0F(nmin, nmax, q, freq)
+    m0_NFloquet = starktools.MatrixH0NFFloquet(nmin, nmax, [q], [freq])
 
-    np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
-
-# def test__H0NFloquet_H0Floquet():
-#     nmin = 1
-#     nmax = 10
-#     q = (2,1)
-#     freq = (2,0.1)
-
-#     m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-#     m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
-
-#     np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
+    np.testing.assert_array_equal(np.asarray(m0_Floquet), np.asarray(m0_NFloquet))
 
 def test_compare_HsNFloquet_HsFloquet():
     nmin = 1
@@ -175,8 +164,8 @@ def test_compare_HsNFloquet_HsFloquet():
     q = 2
     freq = 2
 
-    mH_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
-    mH_NFloquet = starktools.MatrixHsNFloquet(nmin, nmax, [q])
+    mH_Floquet  =  starktools.matrixHsF(nmin, nmax, q)
+    mH_NFloquet = starktools.MatrixHsNFFloquet(nmin, nmax, [q])
 
     np.testing.assert_array_equal(np.asarray(mH_Floquet), np.asarray(mH_NFloquet))
 
@@ -196,10 +185,14 @@ def test_compare_HfNFloquet_HfFloquet():
     }
 
 
-    mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q, defects=defects))
-    mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1], defects = defects))*2
+    # Single-field wrapper is the N=1 case of the v2 N-field class; the unit
+    # matrix (which carries the 1/2 sideband factor) must match bit-for-bit.
+    mf_Floquet_unit = starktools.matrixHfF(nmin, nmax, q).matrix[0]
+    mf_NFloquet_unit = starktools.MatrixHfNFFloquet(nmin, nmax, [q]).matrix[0]
 
-    np.testing.assert_array_equal(mf_Floquet, mf_NFloquet)
+    np.testing.assert_array_equal(np.asarray(mf_Floquet_unit), np.asarray(mf_NFloquet_unit))
+    # Assembling with an amplitude scales linearly: hf([f]) = f * unit.
+    np.testing.assert_array_equal(starktools.matrixHfF(nmin, nmax, q)([2.0]), 2.0 * mf_Floquet_unit)
 
 
 
@@ -788,10 +781,10 @@ def test_shift_10_khz_ac_comparison_with_HF():
     shift_hfn = vals[ind56s]-vals[ind55s]- 39112998448.00716
 
 
-    # HF
-    h0 = np.asarray(starktools.MatrixH0Floquet(nmin, nmax, 1, freqs[1], defects=defects))
-    hf = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, 1, defects=defects))
-    vals = np.linalg.eigvals(h0 + 0.5* hf * 0.1/starktools.Constants.F_He)
+    # HF (single-field; 1/2 sideband factor is inside the unit matrix)
+    h0 = np.asarray(starktools.matrixH0F(nmin, nmax, 1, freqs[1]))
+    hf = starktools.matrixHfF(nmin, nmax, 1)
+    vals = np.linalg.eigvals(h0 + hf([0.1]) / starktools.Constants.F_He)
     ind55s = find_eigen(na, 0, vals)
     ind56s = find_eigen(nb, 0, vals)
 

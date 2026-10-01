@@ -2,197 +2,100 @@ import starktools
 import numpy as np
 from pytest import approx, raises
 
-def test_basic_matrix_H0floquet():
-    """Test object attributes were correctly initiated
-    """
+def test_matrixH0F_attributes():
     nmin = 1
     nmax = 3
     q = 2
     freq = 1
-    m = starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-    
+    m = starktools.matrixH0F(nmin, nmax, q, freq)
+
     assert m.shape == (30, 30)
-    assert m.q == 2
+    assert m.qmaxs == [2]
     assert m.nmax == 3
     assert m.nmin == 1
-    assert m.frequency == 1
+    assert m.frequencies == [1]
 
-def test_matrix_H0Floquet():
-    """Test structure of H0floquet matrix is correct.
-    Should only have diagonal entries which follow E = -1/2n^2 + q*freq
-    """
+def test_matrixH0F_diagonal():
+    """Diagonal entries follow E = -1/(2 (n-delta)^2) + q*freq; off-diagonal are zero."""
     nmin = 1
     nmax = 10
     q = 2
     freq = 2
-    m = starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-    nn = np.arange(nmin, nmax+1, dtype=np.int64)
-    qq = np.arange(-q, q+1, dtype=np.int64)
+    m = starktools.matrixH0F(nmin, nmax, q, freq)
 
-    # Test diagonal entires are correct
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for q in  qq:
-                elm = m[n]
-                assert m[n][l][q][n][l][q] == -0.5 * float(n)**(-2) + q * freq
-    
-    # Test non diagonal entries are zero
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for q in qq:
+    from starktools.matrixNFFloquet_v2 import quantumdefect_nl
+    for i, state in enumerate(m.states):
+        n, l = state[0], state[1]
+        qqv = state[2]
+        assert m[i, i] == approx(quantumdefect_nl.energy_level(n, l) + qqv * freq)
 
-                for n2 in nn:
-                    ll2 = np.arange(0, n2, dtype=np.int64)
-                    for l2 in ll2:
-                        for q2 in qq:
-                            if (n != n2) | (l != l2) | (q != q2):
-                                assert m[n][l][q][n2][l2][q2] == 0
-    
+    off_diag = m.matrix.copy()
+    np.fill_diagonal(off_diag, 0)
+    assert np.all(off_diag == 0)
 
-def test_matrix_HsFloquet():
-    """Test structure of HsFloquet matrix is correct.
-    In the Floquet basis, the dc field only couples states for which m′= m, q′= q, and l' = l± 1.
-    """
+def test_matrixHsF_selection_rules():
+    """DC field couples states with q' == q and |l' - l| == 1 only."""
     nmin = 13
     nmax = 19
     q = 2
-    freq = 2
-    m = starktools.MatrixHsFloquet(nmin, nmax, q)
-    nn = np.arange(nmin, nmax+1, dtype=np.int64)
-    qq = np.arange(-q, q+1, dtype=np.int64)
+    m = starktools.matrixHsF(nmin, nmax, q)
+    qq = np.arange(-q, q + 1)
 
-    # Test diagonal entires are zero
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for q in  qq:
-                assert m[n][l][q][n][l][q] == 0
-    
-    # Check correct terms are coupled correctly
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for n2 in nn:
-                ll2 = np.arange(0, n2, dtype=np.int64)
-                for l2 in ll2:
-                    if np.abs(l-l2) == 1:
-                        for q in qq:
-                            assert m[n][l][q][n2][l2][q] != 0
-    
-    # Check other entries are zero
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for q in qq:
-                for n2 in nn:
-                    ll2 = np.arange(0, n2, dtype=np.int64)
-                    for l2 in ll2:
-                        for q2 in qq:
-                            if  (np.abs(l-l2) != 1):
-                                assert m[n][l][q][n2][l2][q2] == 0
+    # Diagonal is zero
+    assert np.all(np.diag(m.matrix) == 0)
 
-    # Check a value
-    wf1  = starktools.Tools.numerov(19, 0, 19)
-    wf2 = starktools.Tools.numerov(13, 1, 19)
+    for i, s1 in enumerate(m.states):
+        n1, l1, q1 = s1
+        for j, s2 in enumerate(m.states):
+            n2, l2, q2 = s2
+            if q1 == q2 and abs(l1 - l2) == 1:
+                assert m[i, j] != 0
+            elif q1 == q2:
+                assert m[i, j] == 0
+
+    # Check a specific value, including the quantum defect
+    from starktools.matrixNFFloquet_v2 import quantumdefect_nl
+    ns19 = 19 - quantumdefect_nl.calc_defect(19, 0)
+    ns13 = 13 - quantumdefect_nl.calc_defect(13, 1)
+    wf1 = starktools.Tools.numerov(ns19, 0, 19)
+    wf2 = starktools.Tools.numerov(ns13, 1, 19)
     radint = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
     l2 = 1
-    angularElem = (l2**2)/((2*l2+1)*(2*l2-1))
-    angularElem = np.sqrt(angularElem)
+    angularElem = np.sqrt((l2 ** 2) / ((2 * l2 + 1) * (2 * l2 - 1)))
 
-    for q in qq:
-        assert m[19][0][q][13][1][q] == radint * angularElem
+    i = m.lookuptable[(19, 0, 0)]
+    j = m.lookuptable[(13, 1, 0)]
+    assert m[i, j] == approx(radint * angularElem)
 
-
-
-def test_matrix_HfFloquet():
-    """Test structure of HfFloquet matrix is correct.
-    In the Floquet basis, the time-dependent component of the field couples states for
-    which q` = q ± 1, and l` = l ± 1
-    """
+def test_matrixHfF_selection_rules():
+    """AC field couples states with |l' - l| == 1 and |q' - q| == 1 only."""
     nmin = 13
     nmax = 19
     q = 2
+    hf = starktools.matrixHfF(nmin, nmax, q)
+    m = hf.matrix[0]  # unit matrix (includes the 1/2 sideband factor)
 
-    m = starktools.MatrixHfFloquet(nmin, nmax, q)
+    assert np.all(np.diag(m) == 0)
 
-    nn = np.arange(nmin, nmax+1, dtype=np.int64)
-    qq = np.arange(-q, q+1, dtype=np.int64)
+    for i, s1 in enumerate(hf.states):
+        n1, l1, q1 = s1
+        for j, s2 in enumerate(hf.states):
+            n2, l2, q2 = s2
+            if abs(l1 - l2) == 1 and abs(q1 - q2) == 1:
+                assert m[i, j] != 0
+            else:
+                assert m[i, j] == 0
 
-    # Test diagonal entires are zero
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for q in  qq:
-                assert m[n][l][q][n][l][q] == 0
-    
-    # Check correct terms are coupled correctly
-    for n in nn:
-        ll = np.arange(0, n, dtype=np.int64)
-        for l in ll:
-            for n2 in nn:
-                ll2 = np.arange(0, n2, dtype=np.int64)
-                for l2 in ll2:
-                    if np.abs(l-l2) == 1:
-                        for q in qq:
-                            for q2 in qq:
-                                if np.abs(q-q2) == 1:
-                                    if m[n][l][q][n2][l2][q2] == 0:
-                                        print(n,l,q,n2,l2,q2)
-                                    assert m[n][l][q][n2][l2][q2] != 0
+def test_matrixHfF_amplitude_linearity():
+    """Assembling with an amplitude scales the unit matrix linearly."""
+    hf = starktools.matrixHfF(13, 19, 2)
+    unit = hf.matrix[0]
+    f = 0.7
+    np.testing.assert_allclose(hf([f]), f * unit)
+    # multifield convention: hf([2.0]) carries the full (no extra 1/2) coupling
+    np.testing.assert_allclose(hf([2.0]), 2.0 * unit)
 
-
-def test_matrix_HfFloquet_conversion():
-    """Test structure of HfFloquet matrix is correct.
-    In the Floquet basis, the time-dependent component of the field couples states for
-    which q` = q ± 1, and l` = l ± 1
-    """
-    nmin = 13
-    nmax = 19
-    q = 1
-
-    m = starktools.MatrixHfFloquet(nmin, nmax, q)
-
-    nn = np.arange(nmin, nmax+1, dtype=np.int64)
-    qq = np.arange(-q, q+1, dtype=np.int64)
-
-    array = np.array(m)
-    # mm[13][0][0][13][1][1]
-    i = 1
-    j = 2 + 3
-    assert(array[i][j] == m[13][0][0][13][1][1])
-
-
-def test_matrix_HfFloquet_conversion():
-    """Test structure of HfFloquet matrix is correct.
-    In the Floquet basis, the time-dependent component of the field couples states for
-    which q` = q ± 1, and l` = l ± 1
-    """
-    nmin = 13
-    nmax = 19
-    q = 2
-    mm = starktools.MatrixHfFloquet(nmin, nmax, q)
-
-    states = np.arange(min(mm.keys()), max(mm.keys())+1, 1) * (q*2 + 1)
-    
-    size = sum(states)
-    lookuptable = np.empty((size, size),object)
-
-
-    nn = np.arange(nmin, nmax+1, dtype=np.int64)
-    qq = np.arange(-q, q+1, dtype=np.int64)
-    i = 0
-    j = 0
-    for a1 in mm.keys():
-                for a2 in mm[a1].keys():
-                    for a3 in mm[a1][a2].keys():
-                        for b1 in mm[a1][a2][a3].keys():
-                            for b2 in mm[a1][a2][a3][b1].keys():
-                                for b3 in mm[a1][a2][a3][b1][b2].keys():
-                                    lookuptable[i][j] = (a1,a2,a3,b1,b2,b3)
-                                    j += 1
-                        j = 0
-                        i += 1
-    
-    
+def test_matrixHfF_asarray_raises():
+    hf = starktools.matrixHfF(13, 19, 1)
+    with raises(TypeError):
+        np.asarray(hf)
