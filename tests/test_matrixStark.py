@@ -11,16 +11,18 @@ defects = {
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    
-def test_matrixHs_comparison():
-    h = starktools.MatrixHs(3,5)
-    qd = starktools.QuantumDefects()
-    assert (h[3][1][3][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
-    assert (h[3][0][3][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
-    assert (h[3][0][3][1] == h[3][1][3][0])
 
-def test_matrixStarkmlH0():
-    h = starktools.matrixmlH0(3,5, 1)
+def test_matrixHs_matches_quantumdefects():
+    h = starktools.matrixHs(3, 5, 0)
+    qd = starktools.QuantumDefects()
+    i = h.lookuptable[(3, 1)]
+    j = h.lookuptable[(3, 0)]
+    assert h[i][j] == qd.calc_matrix_element(3, 1, 3, 0, nmax=5)
+    assert h[j][i] == qd.calc_matrix_element(3, 0, 3, 1, nmax=5)
+    assert h[i][j] == h[j][i]
+
+def test_matrixH0_states():
+    h = starktools.matrixH0(3, 5, 1)
     states = h.states
 
     assert states[0] == (3, 1)
@@ -34,11 +36,11 @@ def test_matrixStarkmlH0():
     assert states[8] == (5, 4)
     assert h.num_states == 9
 
-def test_matrixStarkmlHs_coupling_specific():
-    nmin= 10
-    nmax= 15
-    h = starktools.matrixmlHs(nmin, nmax, 0, defects)
-    state1 = 10, 0 
+def test_matrixHs_coupling_specific():
+    nmin = 10
+    nmax = 15
+    h = starktools.matrixHs(nmin, nmax, 0, defects)
+    state1 = 10, 0
     state2 = 15, 1
 
     ind1 = h.lookuptable[state1]
@@ -46,12 +48,11 @@ def test_matrixStarkmlHs_coupling_specific():
 
     assert h[ind1][ind2] != 0
 
-def test_matrixStarkmlHs_coupling():
-
+def test_matrixHs_coupling():
     nmin = 10
     nmax = 15
 
-    h = starktools.matrixmlHs(nmin, nmax, 0, defects)
+    h = starktools.matrixHs(nmin, nmax, 0, defects)
     qd = starktools.QuantumDefects(defects)
 
     for state in h.states:
@@ -60,50 +61,20 @@ def test_matrixStarkmlHs_coupling():
         for state2 in h.states:
             n2, l2 = state2
             ind2 = h.lookuptable[(n2, l2)]
-            if l2>l1: # In qd there is a very small numerical difference between the angular intergrals
+            if l2 > l1:  # very small numerical difference between the angular integrals
                 assert h[ind1][ind2] == qd.calc_matrix_element(n1, l1, n2, l2, nmax)
-            if l2<l1:
+            if l2 < l1:
                 assert h[ind1][ind2] == qd.calc_matrix_element(n2, l2, n1, l1, nmax)
 
-def test_compare_MatrixHs_matrixmlHs_basic():
-    nmin = 52
-    nmax = 54
+def test_matrixHs_symmetric():
+    h = starktools.matrixHs(52, 54, 0, defects)
+    np.testing.assert_array_equal(h.matrix, h.matrix.T)
 
-    hs1 = starktools.MatrixHs(nmin, nmax, defects)
-    hs2 = starktools.matrixmlHs(nmin, nmax, 0, defects)
-    m1 = hs1.make_array()
-    m2 = hs2.matrix
-    assert m1.shape == m2.shape
-
-    n1 = 52
-    n2 = 53
-    l1 = 0
-    l2 = 1
-
-    ind1 =  hs2.lookuptable[(n1, l1)]
-    ind2 =  hs2.lookuptable[(n2, l2)]
-    assert hs1[n1][l1][n2][l2] == m2[ind1][ind2]
-    assert hs1[n2][l2][n1][l1] == m2[ind2][ind1]
-
-def test_compare_MatrixHs_matrixmlHs_all():
-
-    nmin = 52
-    nmax = 54
-
-    hs1 = starktools.MatrixHs(nmin, nmax, defects)
-    hs2 = starktools.matrixmlHs(nmin, nmax, 0, defects)
-    m1 = hs1.make_array()
-    m2 = hs2.matrix
-
-    np.testing.assert_array_equal(m1, m2)
-
-def test_compare_MatrixH0_matrixmlH0_all():
-    nmin = 10
-    nmax = 13
-
-    h01 = starktools.MatrixH0(nmin, nmax, defects)
-    h02 = starktools.matrixmlH0(nmin, nmax, 0, defects)
-    m1 = h01.make_array()
-    m2 = h02.matrix
-
-    np.testing.assert_array_equal(m1, m2)
+def test_matrixH0_diagonal():
+    h = starktools.matrixH0(10, 13, 0, defects)
+    off_diag = h.matrix.copy()
+    np.fill_diagonal(off_diag, 0)
+    assert np.all(off_diag == 0)
+    qd = starktools.QuantumDefects(defects)
+    for i, (n, l) in enumerate(h.states):
+        assert h[i][i] == -0.5 * (n - qd._get_qd(n, l)) ** (-2)

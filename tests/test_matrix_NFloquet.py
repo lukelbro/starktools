@@ -61,10 +61,11 @@ def test_matrix_H0NFloquet():
 
 def test_H0NFloquet_sample_vals():
     h = starktools.MatrixH0NFloquet(3,5,[1,1,], [4,3])
-    h0 = starktools.MatrixH0(3,5)
-    assert h[3][0][1][1][3][0][1][1] == h0[3][0][3][0] + 4 + 3
-    assert h[3][0][1][0][3][0][1][0] == h0[3][0][3][0] + 4
-    assert h[3][0][0][1][3][0][0][1] == h0[3][0][3][0] + 3
+    h0 = starktools.matrixH0(3,5)
+    e30 = h0.matrix[h0.lookuptable[(3, 0)], h0.lookuptable[(3, 0)]]
+    assert h[3][0][1][1][3][0][1][1] == e30 + 4 + 3
+    assert h[3][0][1][0][3][0][1][0] == e30 + 4
+    assert h[3][0][0][1][3][0][0][1] == e30 + 3
     assert h[3][0][0][1][3][0][0][0] == 0
 
 def test_HsNFloquet_sample_vals():

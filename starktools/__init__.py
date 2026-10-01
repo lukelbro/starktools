@@ -1,8 +1,7 @@
 from .matrix import Matrix
 from .matrix_base import State, matrix
 from .constants import Constants
-from .matrixStark import MatrixH0, MatrixHs
-from .matrixStarkml import matrixmlH0, matrixmlHs
+from .matrix_stark import matrixH0, matrixHs
 from .matrixFloquet import MatrixH0Floquet, MatrixHsFloquet, MatrixHfFloquet, MatrixFloquet
 from .defects import QuantumDefects, ritz_defect
 from .tools import Tools
@@ -34,14 +33,12 @@ __all__ = [
     "MatrixFsHfFloquet",
     "MatrixFsHs",
     "MatrixFsHsFloquet",
-    "MatrixH0",
     "MatrixH0Floquet",
     "MatrixH0NFFloquet",
     "MatrixH0NFloquet",
     "MatrixHfFloquet",
     "MatrixHfNFFloquet",
     "MatrixHfNFloquet",
-    "MatrixHs",
     "MatrixHsFloquet",
     "MatrixHsNFFloquet",
     "MatrixHsNFloquet",
@@ -51,8 +48,8 @@ __all__ = [
     "Tools",
     "basis_fs",
     "matrix",
-    "matrixmlH0",
-    "matrixmlHs",
+    "matrixH0",
+    "matrixHs",
     "nlbasis",
     "nlqbasis",
     "nlqqbasis",
