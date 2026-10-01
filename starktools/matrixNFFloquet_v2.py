@@ -1,11 +1,11 @@
 import functools
 import numpy as np
 from math import sqrt
-from abc import ABC, abstractmethod
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Dict, List, Tuple
 from numpy.typing import NDArray
 
 from .basis import nlqqbasis
+from .matrix_base import State, matrix
 from .tools import Tools
 
 DEFECTS = {
@@ -88,38 +88,7 @@ class quantumdefect_nl:
             return R * A2, R * A1
 
 
-State = Tuple[int, ...]
-
-
-class MatrixNFBase(ABC):
-    basis: Callable[..., Iterable[State]]
-    states: List[State]
-    lookuptable: Dict[State, int]
-    matrix: NDArray[np.float64]
-
-    @abstractmethod
-    def generate_matrix(self) -> NDArray[np.float64]:
-        pass
-
-    def generate_basis_states(self, **kwargs) -> Tuple[List[State], Dict[State, int]]:
-        states: List[State] = []
-        lookuptable: Dict[State, int] = {}
-        for index, state in enumerate(self.basis(**kwargs)):
-            states.append(state)
-            lookuptable[state] = index
-        return states, lookuptable
-
-    def __array__(self, dtype=None) -> NDArray[np.float64]:
-        return np.array(self.matrix, dtype=dtype)
-
-    def __repr__(self) -> str:
-        return str(self.matrix)
-
-    def __getitem__(self, index: int):
-        return self.matrix[index]
-
-
-class MatrixH0NFFloquet(MatrixNFBase):
+class MatrixH0NFFloquet(matrix):
     def __init__(
         self,
         nmin: int,
@@ -135,7 +104,6 @@ class MatrixH0NFFloquet(MatrixNFBase):
         self.states, self.lookuptable = self.generate_basis_states(
             nmin=nmin, nmax=nmax, qmaxs=qmaxs
         )
-        self.num_states = len(self.states)
         self.matrix = self.generate_matrix()
 
     def generate_matrix(self) -> NDArray[np.float64]:
@@ -149,7 +117,7 @@ class MatrixH0NFFloquet(MatrixNFBase):
         return matrix
 
 
-class MatrixHsNFFloquet(MatrixNFBase):
+class MatrixHsNFFloquet(matrix):
     def __init__(
         self,
         nmin: int,
@@ -163,7 +131,6 @@ class MatrixHsNFFloquet(MatrixNFBase):
         self.states, self.lookuptable = self.generate_basis_states(
             nmin=nmin, nmax=nmax, qmaxs=qmaxs
         )
-        self.num_states = len(self.states)
         self.matrix = self.generate_matrix()
 
     def generate_matrix(self) -> NDArray[np.float64]:
@@ -189,7 +156,7 @@ class MatrixHsNFFloquet(MatrixNFBase):
         return matrix
 
 
-class MatrixHfNFFloquet(MatrixNFBase):
+class MatrixHfNFFloquet(matrix):
     def __init__(
         self,
         nmin: int,
@@ -204,7 +171,6 @@ class MatrixHfNFFloquet(MatrixNFBase):
         self.states, self.lookuptable = self.generate_basis_states(
             nmin=nmin, nmax=nmax, qmaxs=qmaxs
         )
-        self.num_states = len(self.states)
         self.matrix = self.generate_matrix()
 
     def generate_matrix(self) -> Tuple[NDArray[np.float64], ...]:

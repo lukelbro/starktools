@@ -6,10 +6,10 @@ from starktools.matrixNFFloquet_v2 import (
     MatrixH0NFFloquet,
     MatrixHsNFFloquet,
     MatrixHfNFFloquet,
-    MatrixNFBase,
     quantumdefect_nl,
     DEFECTS,
 )
+from starktools.matrix_base import matrix
 from starktools.basis import nlbasis
 
 
@@ -166,17 +166,17 @@ def test_hf_cache_efficiency():
 
 
 # ---------------------------------------------------------------------------
-# MatrixNFBase ABC
+# matrix ABC
 # ---------------------------------------------------------------------------
 
 def test_base_cannot_be_instantiated():
     with pytest.raises(TypeError):
-        MatrixNFBase()
+        matrix()
 
 
 def test_missing_generate_matrix_raises():
     with pytest.raises(TypeError):
-        class Incomplete(MatrixNFBase):
+        class Incomplete(matrix):
             def __init__(self):
                 pass
         Incomplete()
