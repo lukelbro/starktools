@@ -2,23 +2,33 @@ from .tools import Tools
 from math import sqrt
 import numpy as np
 
+
+def ritz_defect(n, l, defects):
+    """Return the quantum defect delta(n, l).
+
+    ``defects`` maps ``l`` to a scalar defect or a list of Ritz coefficients
+    ``[d0, d2, ...]`` evaluated as ``sum_i d_i * m^(-2i)`` with ``m = n - d0``.
+    """
+    qd = defects
+    if l in qd:
+        if type(qd[l]) == list:
+            defect = 0
+            m = n - qd[l][0]
+            for i in range(len(qd[l])):
+                defect = defect + qd[l][i]*m**(-2*i)
+            return defect
+        else:
+            return qd[l]
+    else:
+        return float(0)
+
+
 class QuantumDefects:
     def __init__(self, defects = {}):
         self.__dict__['defects'] = defects
 
     def _get_qd(self, n, l):
-        qd = self.defects
-        if l in qd:
-            if type(qd[l]) == list:
-                defect = 0
-                m = n - qd[l][0]
-                for i in range(len(qd[l])):
-                    defect = defect + qd[l][i]*m**(-2*i)
-                return defect
-            else:
-                return qd[l]
-        else:
-            return float(0)
+        return ritz_defect(n, l, self.defects)
 
     def energy_level(self, n, l):
         return - (n - self._get_qd(n,l))**(-2)

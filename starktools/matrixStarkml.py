@@ -7,6 +7,7 @@ from functools import reduce, cache
 import operator
 import itertools
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
+from .defects import ritz_defect
 
 class matrix_v2:
     def __init__(self, nmin: int, nmax: int, defects = {}):
@@ -62,18 +63,7 @@ class matrix_v2:
         return self.states[index1], self.states[index2]
         
     def _get_qd(self, n, l):
-        qd = self.defects
-        if l in qd:
-            if type(qd[l]) == list:
-                defect = 0
-                m = n - qd[l][0]
-                for i in range(len(qd[l])):
-                    defect = defect + qd[l][i]*m**(-2*i)
-                return defect
-            else:
-                return qd[l]
-        else:
-            return float(0)
+        return ritz_defect(n, l, self.defects)
 
     def __repr__(self):
         return str(self.matrix)

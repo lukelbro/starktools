@@ -1,4 +1,5 @@
 import numpy as np
+from .defects import ritz_defect
 
 class Matrix:
     def __init__(self, nmin: int, nmax: int):
@@ -77,18 +78,7 @@ class Matrix:
         return m
     
     def _get_qd(self, n, l):
-        qd = self.defects
-        if l in qd:
-            if type(qd[l]) == list:
-                defect = 0
-                m = n - qd[l][0]
-                for i in range(len(qd[l])):
-                    defect = defect + qd[l][i]*m**(-2*i)
-                return defect
-            else:
-                return qd[l]
-        else:
-            return float(0)
+        return ritz_defect(n, l, self.defects)
 
     def __repr__(self):
         return str(self.matrix)
