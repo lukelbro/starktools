@@ -35,15 +35,6 @@ def test_h0_diagonal_structure():
     assert np.all(off_diag == 0)
 
 
-def test_h0_matches_legacy():
-    nmin, nmax = 3, 5
-    qmaxs = [1, 1]
-    freqs = [2.0, 1.5]
-    h0_new = np.asarray(MatrixH0NFFloquet(nmin, nmax, qmaxs, freqs))
-    h0_old = starktools.MatrixH0NFloquet(nmin, nmax, qmaxs, freqs, defects=DEFECTS).make_array()
-    assert np.allclose(h0_new, h0_old, rtol=1e-5)
-
-
 # ---------------------------------------------------------------------------
 # MatrixHsNFFloquet
 # ---------------------------------------------------------------------------
@@ -97,18 +88,6 @@ def test_hf_unit_matrices_disjoint():
                 f"Matrices {a} and {b} share nonzero elements"
 
 
-def test_hf_call_matches_legacy():
-    nmin, nmax = 3, 5
-    qmaxs = [1, 1]
-    famps = [2.0, 3.0]
-
-    hf_new = MatrixHfNFFloquet(nmin, nmax, qmaxs)
-    result_new = hf_new(famps)
-
-    hf_old = starktools.MatrixHfNFloquet(nmin, nmax, qmaxs, famps, defects=DEFECTS).make_array()
-    assert np.allclose(result_new, hf_old, rtol=1e-4)
-
-
 def test_hf_call_linearity():
     hf = MatrixHfNFFloquet(3, 5, [1, 1])
     k = 3.7
@@ -141,16 +120,6 @@ def test_hf_call_hermitian():
     hf = MatrixHfNFFloquet(3, 5, [1, 1])
     M = hf([2.3, 0.7])
     assert M == approx(M.T)
-
-
-def test_hf_single_field_matches_legacy_single():
-    nmin, nmax = 3, 5
-    qmax = 2
-    F = 1.5
-    hf_new = MatrixHfNFFloquet(nmin, nmax, [qmax])
-    result_new = hf_new([F])
-    hf_old = starktools.MatrixHfNFloquet(nmin, nmax, [qmax], [F], defects=DEFECTS).make_array()
-    assert np.allclose(result_new, hf_old, rtol=1e-4)
 
 
 def test_hf_cache_efficiency():

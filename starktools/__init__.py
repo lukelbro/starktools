@@ -5,7 +5,6 @@ from .matrix_stark import matrixH0, matrixHs
 from .matrix_floquet import matrixH0F, matrixHsF, matrixHfF
 from .defects import QuantumDefects, ritz_defect
 from .tools import Tools
-from .matrixMMFloquet import MatrixNFloquet, MatrixH0NFloquet, MatrixHsNFloquet, MatrixHfNFloquet
 from .matrixNFFloquet_v2 import MatrixH0NFFloquet, MatrixHsNFFloquet, MatrixHfNFFloquet
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
 from .matrixFinestructure import (
@@ -33,12 +32,8 @@ __all__ = [
     "MatrixFsHs",
     "MatrixFsHsFloquet",
     "MatrixH0NFFloquet",
-    "MatrixH0NFloquet",
     "MatrixHfNFFloquet",
-    "MatrixHfNFloquet",
     "MatrixHsNFFloquet",
-    "MatrixHsNFloquet",
-    "MatrixNFloquet",
     "QuantumDefects",
     "State",
     "Tools",

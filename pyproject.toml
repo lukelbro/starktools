@@ -14,7 +14,6 @@ authors = [
 dependencies = [
     "numpy",
     "sympy",
-    "nested_dict",
 ]
 
 [project.optional-dependencies]
