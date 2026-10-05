@@ -155,7 +155,6 @@ def test_calc_transition():
     assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1,1, 2) == approx(-9.118568, rel=1e-7)
     assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1, 1, 1) == approx(-9.118568, rel=1e-4)
     assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1, 1, 0) == approx(-9.118568, rel=1e-3)
-test_calc_transition()
 
 def test_calc_transitions():
     def calc_transition( n1, l1, n2, l2):
@@ -184,7 +183,7 @@ def test_calc_transitions():
 
 def test_matrix_fshs():
     # Compare results with niave implementation
-    class MatrixFsHs_poor(starktools.MatrixFs):
+    class matrixfsHs_poor(starktools.matrixfsHs):
         def generate_matrix(self):
             matrix = np.zeros((self.num_states, self.num_states))
             for i, state1 in enumerate(self.states):
@@ -194,14 +193,14 @@ def test_matrix_fshs():
                     matrix[i, j] = starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax)
             return matrix
     
-    M_poor = MatrixFsHs_poor(8,9,1,1)
-    M = starktools.MatrixFsHs(8,9,1,1) 
+    M_poor = matrixfsHs_poor(8,9,1,1)
+    M = starktools.matrixfsHs(8,9,1,1)
 
     assert np.equal(M_poor.matrix, M.matrix).all()
 
 def test_matrix_fs_H0_floquet():
     freq = 99
-    M = starktools.MatrixFsH0Floquet(8,9,1,0,1,freq)
+    M = starktools.matrixfsH0F(8,9,1,1,freq)
     for i in range(M.matrix.shape[0]):
         state1 = M.convert_index_to_state(i)
         n1, l1, s1, j1, mj1, q1 = state1
@@ -212,22 +211,31 @@ def test_matrix_fs_H0_floquet():
                 assert M[i,j] == 0
 
 def test_matrix_fs_Hf_floquet():
-    freq = 99
-    M = starktools.MatrixFsHfFloquet(8,9,1,0,1,freq)
-    for i in range(M.matrix.shape[0]):
-        state1 = M.convert_index_to_state(i)
+    hf = starktools.matrixfsHfF(8,9,1,0,1)
+    M = hf([1.0])
+    np.testing.assert_array_equal(M, hf.matrix[0])
+    np.testing.assert_array_equal(hf([2.5]), 2.5 * hf.matrix[0])
+    for i in range(M.shape[0]):
+        state1 = hf.convert_index_to_state(i)
         n1, l1, s1, j1, mj1, q1 = state1
-        for j in range(M.matrix.shape[1]):
-            state2 = M.convert_index_to_state(j)
+        for j in range(M.shape[1]):
+            state2 = hf.convert_index_to_state(j)
             n2, l2, s2, j2, mj2, q2 = state2
             if np.abs(q1-q2)==1:
-                assert M.matrix[i,j] == 0.5 * starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
+                assert M[i,j] == 0.5 * starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, hf.polarization, s1, hf.nmax)
             else:
-                assert M.matrix[i,j] == 0
+                assert M[i,j] == 0
+
+
+def test_matrix_fs_Hf_floquet_array_raises():
+    hf = starktools.matrixfsHfF(4,5,1,0,1)
+    with raises(TypeError):
+        np.asarray(hf)
+    with raises(ValueError):
+        hf([1.0, 2.0])
 
 def test_matrix_fs_Hs_floquet():
-    freq = 99
-    M = starktools.MatrixFsHsFloquet(8,9,1,0,1,freq)
+    M = starktools.matrixfsHsF(8,9,1,0,1)
     for i in range(M.matrix.shape[0]):
         state1 = M.convert_index_to_state(i)
         n1, l1, s1, j1, mj1, q1 = state1
@@ -241,20 +249,19 @@ def test_matrix_fs_Hs_floquet():
 
 
 def test_mjmax_feature():
-    """Test the mjmax parameter for limiting magnetic quantum numbers in MatrixFsFloquet."""
+    """Test the mjmax parameter for limiting magnetic quantum numbers in matrixfsH0F."""
     nmin, nmax = 5, 6
     S = 0.5  # spin-1/2
     qmax = 1
     frequency = 1.0
-    polarization = 0
-    
+
     # Test without mjmax (should include all possible mj values)
-    matrix_no_limit = starktools.MatrixFsFloquet(nmin, nmax, S, polarization, qmax, frequency)
+    matrix_no_limit = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency)
     states_no_limit = matrix_no_limit.states
     mj_values_no_limit = set(state[4] for state in states_no_limit)
     
     # Test with mjmax = 0.5 (should limit to |mj| <= 0.5)
-    matrix_limited = starktools.MatrixFsFloquet(nmin, nmax, S, polarization, qmax, frequency, mjmax=0.5)
+    matrix_limited = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency, mjmax=0.5)
     states_limited = matrix_limited.states
     mj_values_limited = set(state[4] for state in states_limited)
     

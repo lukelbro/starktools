@@ -1,10 +1,13 @@
-from sympy.physics.wigner import wigner_3j, wigner_6j
-import numpy as np
-from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
-from .tools import Tools
-from .constants import Constants
 import functools
-from typing import Callable, Iterator, Tuple, Any
+from typing import List, Optional, Tuple
+
+import numpy as np
+from numpy.typing import NDArray
+from sympy.physics.wigner import wigner_3j, wigner_6j
+
+from .constants import Constants
+from .matrix_base import matrix
+from .tools import Tools
 
 DEFECTS = {
     0: {  # S states (l=0)
@@ -77,19 +80,22 @@ DEFECTS = {
     }
 }
 
-_cached_functions = []
+_fs_cached_functions = []
 
-def cached(func):
+
+def _fs_cached(func):
     cached_func = functools.cache(func)
-    _cached_functions.append(cached_func)
+    _fs_cached_functions.append(cached_func)
     return cached_func
-    
+
+
 class quantumdefect_fs:
     @staticmethod
     def clear_cache():
-        for func in _cached_functions:
+        for func in _fs_cached_functions:
             func.cache_clear()
 
+    @staticmethod
     def calc_defect(n, l, s, j):
         '''where $n^* = n - \delta(n^*)$, and the quantum defect $\delta(n^*)$ is defined recursively through the Ritz expansion
             \begin{equation}
@@ -97,8 +103,8 @@ class quantumdefect_fs:
             \end{equation}'''
         try:
             deltas = DEFECTS[l][s][j]
-        except:
-            return 0
+        except KeyError:
+            return 0.0
         defect = 0
         order = 0
         for d in deltas:
@@ -106,7 +112,8 @@ class quantumdefect_fs:
             order += 2
         return defect
     
-    def energylevel( n, l, s, j):
+    @staticmethod
+    def energylevel(n, l, s, j):
         """
         Calculate the energy level of an electron in an atom based on quantum numbers and defects.
 
@@ -126,7 +133,7 @@ class quantumdefect_fs:
         return - (n - quantumdefect_fs.calc_defect(n,l,s,j))**(-2)
     
     @staticmethod
-    @cached
+    @_fs_cached
     def radial_integral(n1, l1, s1, j1, n2, l2, s2, j2, nmax):
         """
         Calculate the radial integral of two electron wavefunctions considering quantum defects.
@@ -168,13 +175,13 @@ class quantumdefect_fs:
         return radialInt
     
     @staticmethod
-    @cached
+    @_fs_cached
     def numerov(n, l, nmax):
             return Tools.numerov(n, l, nmax)
 
     @staticmethod
-    @cached
-    def angular_integral(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
+    @_fs_cached
+    def angular_integral(l1, j1, mj1, l2, j2, mj2, q, s):
         max_l = np.max([l1, l2])
         phase = (-1)**(-mj2+s+max_l)
 
@@ -185,7 +192,7 @@ class quantumdefect_fs:
         return float(phase * A * W6 * W3)
     
     @staticmethod
-    @cached
+    @_fs_cached
     def dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
         """
         Calculate the dipole matrix element for a transition between two fine-structure states in an atom. 
@@ -233,11 +240,12 @@ class quantumdefect_fs:
             return 0
     
         radialInt = quantumdefect_fs.radial_integral(n1, l1, s, j1, n2, l2, s, j2, nmax)
-        angularInt = quantumdefect_fs.angular_integral(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax)
+        angularInt = quantumdefect_fs.angular_integral(l1, j1, mj1, l2, j2, mj2, q, s)
         return float(angularInt * radialInt)
 
 
-    def calc_transition( n1, l1, s1, j1, n2, l2, s2, j2):
+    @staticmethod
+    def calc_transition(n1, l1, s1, j1, n2, l2, s2, j2):
         """
         Calculate the transition frequency between two atomic energy levels in GHz.
 
@@ -303,154 +311,159 @@ class basis_fs:
                 q += 1
 
 
-class MatrixFs():
-    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, basis=None, frequency: float = None, lmax=None, mjmax=None):
+def _group_indices(states, key):
+    groups = {}
+    for idx, state in enumerate(states):
+        groups.setdefault(key(state), []).append(idx)
+    return groups
+
+
+def _dipole(state1, state2, polarization, nmax):
+    n1, l1, s, j1, mj1 = state1[:5]
+    n2, l2, _, j2, mj2 = state2[:5]
+    return quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, polarization, s, nmax)
+
+
+class matrixfsH0(matrix):
+    """Field-free (diagonal) Hamiltonian on the (n, l, S, j, mj) basis."""
+
+    def __init__(self, nmin: int, nmax: int, S: float, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> None:
+        self.nmin = nmin
+        self.nmax = nmax
+        self.S = S
+        self.lmax = lmax
+        self.mjmax = mjmax
+        self.basis = basis_fs.generate_atom_levels_fs
+        self.states, self.lookuptable = self.generate_basis_states(
+            n_min=nmin, n_max=nmax, S=S, lmax=lmax, mjmax=mjmax
+        )
+        self.matrix = self.generate_matrix()
+
+    def generate_matrix(self) -> NDArray[np.float64]:
+        m = np.zeros((self.num_states, self.num_states))
+        for i, (n, l, s, j, mj) in enumerate(self.states):
+            m[i, i] = 0.5 * quantumdefect_fs.energylevel(n, l, s, j)
+        return m
+
+
+class matrixfsHs(matrix):
+    """DC Stark coupling Hamiltonian on the (n, l, S, j, mj) basis."""
+
+    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> None:
         self.nmin = nmin
         self.nmax = nmax
         self.S = S
         self.polarization = polarization
-        self.frequency = frequency
         self.lmax = lmax
         self.mjmax = mjmax
-        if basis is None:
-            self.basis = basis_fs.generate_atom_levels_fs(nmin, nmax, S, lmax=lmax, mjmax=mjmax)
-        else:
-            self.basis = basis
-        self.states, self.lookuptable = self.generate_matrix_states()
-        self.num_states = len(self.states)
-
+        self.basis = basis_fs.generate_atom_levels_fs
+        self.states, self.lookuptable = self.generate_basis_states(
+            n_min=nmin, n_max=nmax, S=S, lmax=lmax, mjmax=mjmax
+        )
         self.matrix = self.generate_matrix()
 
-    def generate_matrix_states(self):
-        states = []
-        lookuptable = {}
-        index = 0
-        for state in self.basis:
-            states.append(state)
-            lookuptable[state] = index
-            index += 1
-        return states, lookuptable
+    def generate_matrix(self) -> NDArray[np.float64]:
+        m = np.zeros((self.num_states, self.num_states))
+        groups = _group_indices(self.states, lambda s: s[1])
+        for l1, indices1 in groups.items():
+            for l2 in (l1 - 1, l1 + 1):
+                for i in indices1:
+                    for j in groups.get(l2, ()):
+                        m[i, j] = _dipole(self.states[i], self.states[j], self.polarization, self.nmax)
+        return m
 
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-        return matrix
-    
-    def convert_state_to_index(self, state):
-        return self.lookuptable[state]
 
-    def convert_states_to_index(self, state1, state2):
-        return self.lookuptable[state1], self.lookuptable[state2]
+class matrixfsH0F(matrix):
+    """Single-field Floquet diagonal Hamiltonian on the (n, l, S, j, mj, q) basis."""
 
-    def convert_index_to_state(self, index):
-        return self.states[index]
-
-    def convert_indexs_to_states(self, index1, index2):
-        return self.states[index1], self.states[index2]
-        
-    def __repr__(self):
-        return str(self.matrix)
-    
-    def __getitem__(self, index):
-        return self.matrix[index]
-
-class MatrixFsH0(MatrixFs):
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-        for i, state in enumerate(self.states):
-            n, l, s, j, m = state
-            matrix[i,i] = 0.5* quantumdefect_fs.energylevel(n, l, s, j)
-        return matrix
-
-class MatrixFsHs(MatrixFs):
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-
-        # Make a dictionary of states with the l value as the keys
-        l_to_indices = {}
-        for idx, state in enumerate(self.states):
-            l = state[1]
-            l_to_indices.setdefault(l, []).append(idx)
-
-        # Fill matrix based on requirement for l pm 1.
-        for l1, indices1 in l_to_indices.items():
-            for delta in [-1, 1]:
-                l2 = l1 + delta
-                if l2 in l_to_indices:
-                    for i in indices1:
-                        n1, l1, s, j1, mj1 = self.states[i]
-                        for j in l_to_indices[l2]:
-                            n2, l2, s, j2, mj2 = self.states[j]
-                            matrix[i, j] = quantumdefect_fs.dipoleMatrixElement(
-                                n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax
-                            )
-        return matrix
-    
-class MatrixFsFloquet(MatrixFs):
-    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, frequency: float, lmax=None, mjmax=None):
+    def __init__(self, nmin: int, nmax: int, S: float, qmax: int, frequency: float, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> None:
+        self.nmin = nmin
+        self.nmax = nmax
+        self.S = S
         self.qmax = qmax
         self.frequency = frequency
         self.lmax = lmax
         self.mjmax = mjmax
-        floquet_basis = basis_fs.generate_atom_levels_fs_floquet(nmin, nmax, S, qmax, lmax=lmax, mjmax=mjmax)
-        super().__init__(nmin, nmax, S, polarization, basis=floquet_basis, frequency=frequency)
+        self.basis = basis_fs.generate_atom_levels_fs_floquet
+        self.states, self.lookuptable = self.generate_basis_states(
+            n_min=nmin, n_max=nmax, S=S, qmax=qmax, lmax=lmax, mjmax=mjmax
+        )
+        self.matrix = self.generate_matrix()
 
-class MatrixFsH0Floquet(MatrixFsFloquet):
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-        for i, state in enumerate(self.states):
-            n, l, s, j, m, q = state
-            matrix[i,i] = 0.5 *quantumdefect_fs.energylevel(n, l, s, j) + self.frequency * q
-        return matrix
-    
-class MatrixFsHsFloquet(MatrixFsFloquet):    
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-        # Group indices by (l, q)
-        lq_to_indices = {}
-        for idx, state in enumerate(self.states):
-            l = state[1]
-            q = state[-1]
-            lq_to_indices.setdefault((l, q), []).append(idx)
+    def generate_matrix(self) -> NDArray[np.float64]:
+        m = np.zeros((self.num_states, self.num_states))
+        for i, (n, l, s, j, mj, q) in enumerate(self.states):
+            m[i, i] = 0.5 * quantumdefect_fs.energylevel(n, l, s, j) + self.frequency * q
+        return m
 
-        # Fill matrix: only connect states with same q and l2 = l1 ± 1
-        for (l1, q), indices1 in lq_to_indices.items():
-            for delta in [-1, 1]:
-                l2 = l1 + delta
-                key2 = (l2, q)
-                if key2 in lq_to_indices:
+
+class matrixfsHsF(matrix):
+    """Single-field Floquet DC coupling Hamiltonian (couples equal q only)."""
+
+    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> None:
+        self.nmin = nmin
+        self.nmax = nmax
+        self.S = S
+        self.polarization = polarization
+        self.qmax = qmax
+        self.lmax = lmax
+        self.mjmax = mjmax
+        self.basis = basis_fs.generate_atom_levels_fs_floquet
+        self.states, self.lookuptable = self.generate_basis_states(
+            n_min=nmin, n_max=nmax, S=S, qmax=qmax, lmax=lmax, mjmax=mjmax
+        )
+        self.matrix = self.generate_matrix()
+
+    def generate_matrix(self) -> NDArray[np.float64]:
+        m = np.zeros((self.num_states, self.num_states))
+        groups = _group_indices(self.states, lambda s: (s[1], s[5]))
+        for (l1, q), indices1 in groups.items():
+            for l2 in (l1 - 1, l1 + 1):
+                for i in indices1:
+                    for j in groups.get((l2, q), ()):
+                        m[i, j] = _dipole(self.states[i], self.states[j], self.polarization, self.nmax)
+        return m
+
+
+class matrixfsHfF(matrix):
+    """Single-field Floquet AC coupling Hamiltonian (couples q to q +/- 1).
+
+    Stores the unit matrix (with the 1/2 sideband factor); assemble the full
+    matrix for a given field amplitude by calling the instance: ``hf([f])``.
+    """
+
+    def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> None:
+        self.nmin = nmin
+        self.nmax = nmax
+        self.S = S
+        self.polarization = polarization
+        self.qmax = qmax
+        self.lmax = lmax
+        self.mjmax = mjmax
+        self.basis = basis_fs.generate_atom_levels_fs_floquet
+        self.states, self.lookuptable = self.generate_basis_states(
+            n_min=nmin, n_max=nmax, S=S, qmax=qmax, lmax=lmax, mjmax=mjmax
+        )
+        self.matrix = self.generate_matrix()
+
+    def generate_matrix(self) -> Tuple[NDArray[np.float64]]:
+        m = np.zeros((self.num_states, self.num_states))
+        groups = _group_indices(self.states, lambda s: (s[1], s[5]))
+        for (l1, q1), indices1 in groups.items():
+            for l2 in (l1 - 1, l1 + 1):
+                for q2 in (q1 - 1, q1 + 1):
                     for i in indices1:
-                        n1, l1, s, j1, mj1, q1 = self.states[i]
-                        for j in lq_to_indices[key2]:
-                            n2, l2, s, j2, mj2, q2 = self.states[j]
-                            # q1 == q2 is always true here by construction
-                            matrix[i, j] = quantumdefect_fs.dipoleMatrixElement(
-                                n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax
-                            )
-        return matrix
+                        for j in groups.get((l2, q2), ()):
+                            m[i, j] = 0.5 * _dipole(self.states[i], self.states[j], self.polarization, self.nmax)
+        return (m,)
 
-class MatrixFsHfFloquet(MatrixFsFloquet):
-    def generate_matrix(self):
-        matrix = np.zeros((self.num_states, self.num_states))
-        # Group indices by (l, q)
-        lq_to_indices = {}
-        for idx, state in enumerate(self.states):
-            l = state[1]
-            q = state[-1]
-            lq_to_indices.setdefault((l, q), []).append(idx)
+    def __call__(self, famps: List[float]) -> NDArray[np.float64]:
+        if len(famps) != 1:
+            raise ValueError(f"Expected 1 amplitude, got {len(famps)}")
+        return famps[0] * self.matrix[0]
 
-        # Fill matrix: connect states with delta l = ±1 and delta q = ±1
-        for (l1, q1), indices1 in lq_to_indices.items():
-            for delta_l in [-1, 1]:
-                l2 = l1 + delta_l
-                for delta_q in [-1, 1]:
-                    q2 = q1 + delta_q
-                    key2 = (l2, q2)
-                    if key2 in lq_to_indices:
-                        for i in indices1:
-                            n1, l1, s, j1, mj1, q1 = self.states[i]
-                            for j in lq_to_indices[key2]:
-                                n2, l2, s, j2, mj2, q2 = self.states[j]
-                                matrix[i, j] = 0.5 * quantumdefect_fs.dipoleMatrixElement(
-                                    n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax
-                                )
-        return matrix
+    def __array__(self, dtype=None):
+        raise TypeError(
+            "matrixfsHfF stores the unit matrix. "
+            "Use hf(famps) to get the assembled matrix."
+        )

@@ -7,16 +7,14 @@ from .defects import QuantumDefects, ritz_defect
 from .tools import Tools
 from .matrixNFFloquet_v2 import MatrixH0NFFloquet, MatrixHsNFFloquet, MatrixHfNFFloquet
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
-from .matrixFinestructure import (
+from .matrix_finestructure import (
     DEFECTS,
-    MatrixFs,
-    MatrixFsFloquet,
-    MatrixFsH0,
-    MatrixFsH0Floquet,
-    MatrixFsHfFloquet,
-    MatrixFsHs,
-    MatrixFsHsFloquet,
     basis_fs,
+    matrixfsH0,
+    matrixfsH0F,
+    matrixfsHfF,
+    matrixfsHs,
+    matrixfsHsF,
     quantumdefect_fs,
 )
 
@@ -24,13 +22,6 @@ __all__ = [
     "Constants",
     "DEFECTS",
     "Matrix",
-    "MatrixFs",
-    "MatrixFsFloquet",
-    "MatrixFsH0",
-    "MatrixFsH0Floquet",
-    "MatrixFsHfFloquet",
-    "MatrixFsHs",
-    "MatrixFsHsFloquet",
     "MatrixH0NFFloquet",
     "MatrixHfNFFloquet",
     "MatrixHsNFFloquet",
@@ -41,6 +32,11 @@ __all__ = [
     "matrix",
     "matrixH0",
     "matrixH0F",
+    "matrixfsH0",
+    "matrixfsH0F",
+    "matrixfsHfF",
+    "matrixfsHs",
+    "matrixfsHsF",
     "matrixHs",
     "matrixHsF",
     "matrixHfF",
