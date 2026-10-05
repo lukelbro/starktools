@@ -161,7 +161,7 @@ def test_calc_transitions():
         qd = starktools.QuantumDefects(df_triplet)
         if (n1 == n2) and (l1==l2):
             return 0
-        return starktools.Constants.c/(1/((qd.energy_level(n1, l1)*starktools.Constants.R_He  - qd.energy_level(n2, l2)*starktools.Constants.R_He)))*10**-9
+        return (qd.energy_level(n1, l1) - qd.energy_level(n2, l2)) * starktools.Constants.E_He / starktools.Constants.h * 1e-9
     
     nmin = 52
     nmax = 58
@@ -206,7 +206,7 @@ def test_matrix_fs_H0_floquet():
         n1, l1, s1, j1, mj1, q1 = state1
         for j in range(M.matrix.shape[1]):
             if i == j:
-                assert M[i,j] == 0.5 * starktools.quantumdefect_fs.energylevel(n1, l1, s1, j1) + freq * q1
+                assert M[i,j] == starktools.quantumdefect_fs.energylevel(n1, l1, s1, j1) + freq * q1
             else:
                 assert M[i,j] == 0
 

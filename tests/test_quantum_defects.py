@@ -55,15 +55,12 @@ def test_defect():
 def test_energy_level():
     qd = starktools.QuantumDefects(defects)
     e55p = qd.energy_level(55, 0)
-    assert e55p == approx(-3.341738483799353e-04, rel=1e-12, abs=1e-16)
+    assert e55p == approx(-1.6708692418996766e-04, rel=1e-12, abs=1e-16)
 
 def test_energy_level_si():
     qd = starktools.QuantumDefects(defects)
-    R_He = starktools.Constants.R_He
-    c  = starktools.Constants.c 
-    h = starktools.Constants.h
-    e55p = R_He * c * h * qd.energy_level(55, 0)
-    assert e55p == approx(7.283563680292469e-22)
+    e55p = starktools.Constants.E_He * qd.energy_level(55, 0)
+    assert e55p == approx(-7.283563680292469e-22, rel=1e-6, abs=0)
 
 def test_calc_matrix_element():
     qd = starktools.QuantumDefects(defects)

@@ -430,7 +430,7 @@ def test_ac_starkshift_one_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -476,7 +476,7 @@ def test_ac_starkshift_two_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -522,7 +522,7 @@ def test_ac_starkshift_two_ac_field2():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -571,7 +571,7 @@ def test_ac_starkshift_two_ac_field3():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -627,7 +627,7 @@ def test_ac_starkshift_commensurate():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -676,7 +676,7 @@ def test_dc_stark_shift():
     
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -757,7 +757,7 @@ def test_shift_10_khz_ac_comparison_with_HF():
      
     def find_eigen(n, l, v, offset=0):
         qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):

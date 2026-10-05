@@ -114,23 +114,8 @@ class quantumdefect_fs:
     
     @staticmethod
     def energylevel(n, l, s, j):
-        """
-        Calculate the energy level of an electron in an atom based on quantum numbers and defects.
-
-        Parameters:
-        n (int): Principal quantum number.
-        l (int): Orbital angular momentum quantum number.
-        s (int): Spin quantum number.
-        j (float): Total angular momentum quantum number.
-
-        Returns:
-        float: The energy level of the electron in atomic units.
-
-        The energy level is calculated using the formula:
-        E = - (n - self.calc_defects(n, l, s, j))**(-2)
-        where calc_defects is a method that computes the quantum defects.
-        """
-        return - (n - quantumdefect_fs.calc_defect(n,l,s,j))**(-2)
+        """Energy of the (n, l, s, j) level in atomic units (Hartree): -1/(2 (n - delta)^2)."""
+        return -0.5 * (n - quantumdefect_fs.calc_defect(n,l,s,j))**(-2)
     
     @staticmethod
     @_fs_cached
@@ -262,7 +247,8 @@ class quantumdefect_fs:
         Returns:
         float: The transition frequency in gigahertz (GHz).
         """
-        return Constants.c/(1/((quantumdefect_fs.energylevel(n1, l1, s1, j1)*Constants.R_He  - quantumdefect_fs.energylevel(n2, l2, s2, j2)*Constants.R_He)))*10**-9
+        dE = quantumdefect_fs.energylevel(n1, l1, s1, j1) - quantumdefect_fs.energylevel(n2, l2, s2, j2)
+        return dE * Constants.E_He / Constants.h * 1e-9
 
 class basis_fs:
     @staticmethod
@@ -342,7 +328,7 @@ class matrixfsH0(matrix):
     def generate_matrix(self) -> NDArray[np.float64]:
         m = np.zeros((self.num_states, self.num_states))
         for i, (n, l, s, j, mj) in enumerate(self.states):
-            m[i, i] = 0.5 * quantumdefect_fs.energylevel(n, l, s, j)
+            m[i, i] = quantumdefect_fs.energylevel(n, l, s, j)
         return m
 
 
@@ -393,7 +379,7 @@ class matrixfsH0F(matrix):
     def generate_matrix(self) -> NDArray[np.float64]:
         m = np.zeros((self.num_states, self.num_states))
         for i, (n, l, s, j, mj, q) in enumerate(self.states):
-            m[i, i] = 0.5 * quantumdefect_fs.energylevel(n, l, s, j) + self.frequency * q
+            m[i, i] = quantumdefect_fs.energylevel(n, l, s, j) + self.frequency * q
         return m
 
 
