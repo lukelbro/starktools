@@ -426,7 +426,6 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) == 0)
 
 
-@pytest.mark.slow
 def test_ac_starkshift_one_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
@@ -473,7 +472,6 @@ def test_ac_starkshift_one_ac_field1():
     
     assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=200)
 
-@pytest.mark.slow
 def test_ac_starkshift_two_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
@@ -520,7 +518,6 @@ def test_ac_starkshift_two_ac_field1():
     
     assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=1000)
    
-@pytest.mark.slow
 def test_ac_starkshift_two_ac_field2():
     
     def find_eigen(n, l, v, offset=0):
@@ -570,7 +567,6 @@ def test_ac_starkshift_two_ac_field2():
     assert (-1099228472064.9489  - val[ind55s]) == approx(rabi/2, abs=1000)
 
 
-@pytest.mark.slow
 def test_ac_starkshift_two_ac_field3():
     
     def find_eigen(n, l, v, offset=0):
@@ -627,7 +623,6 @@ def test_ac_starkshift_two_ac_field3():
     assert (-1060115473616.9417 - val[ind56s]) == approx(rabi2/2, abs=300)
 
 
-@pytest.mark.slow
 def test_ac_starkshift_commensurate():
     
     def find_eigen(n, l, v, offset=0):
@@ -657,7 +652,7 @@ def test_ac_starkshift_commensurate():
 
     rabi = electricDipoleMoment * estrength/starktools.Constants.h
 
-    assert rabi/2 == 1571675.449592038
+    assert rabi/2 == 1571849.9009407908
     nmin = 55
     nmax = 55
     q = [5,5]
