@@ -3,14 +3,17 @@ import numpy as np
 import pytest
 from pytest import approx, raises
 import scipy
-from types import SimpleNamespace
 
 from starktools.matrixNFFloquet_v2 import DEFECTS, quantumdefect_nl
 
 
-def _el(m, b1, b2):
-    """Matrix element between basis states b1 and b2 (state tuples)."""
-    return m.matrix[m.lookuptable[tuple(b1)], m.lookuptable[tuple(b2)]]
+def _el(m, b1, b2, matrix=None):
+    """Matrix element between basis states b1 and b2 (state tuples).
+
+    Pass ``matrix`` to read from an assembled array (e.g. ``hf(famps)``) instead of ``m.matrix``.
+    """
+    matrix = m.matrix if matrix is None else matrix
+    return matrix[m.lookuptable[tuple(b1)], m.lookuptable[tuple(b2)]]
 
 
 def test_matrix_dimensions():
@@ -91,13 +94,13 @@ def test_HsNFloquet_sample_vals():
 def test_HfNFloquet_sample_vals():
     # Double field strength to account for 0.5*f
     hf_obj = starktools.MatrixHfNFFloquet(3,5,[1,1])
-    h = SimpleNamespace(matrix=hf_obj([2,2]), lookuptable=hf_obj.lookuptable)
+    hf = hf_obj([2,2])
     qd = starktools.QuantumDefects(DEFECTS)
-    assert (_el(h, (3, 0, 0, 0), (3, 1, 1, 0)) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
-    assert (_el(h, (3, 1, 0, 0), (3, 0, 1, 0)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
-    assert (_el(h, (3, 1, 1, 1), (3, 0, 1, 0)) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
+    assert (_el(hf_obj, (3, 0, 0, 0), (3, 1, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
+    assert (_el(hf_obj, (3, 1, 0, 0), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
+    assert (_el(hf_obj, (3, 1, 1, 1), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
     
-    assert (_el(h, (3, 1, 0, 1), (3, 0, 1, 0)) == 0)
+    assert (_el(hf_obj, (3, 1, 0, 1), (3, 0, 1, 0), hf) == 0)
 
 
 
@@ -273,7 +276,7 @@ def test_matrix_HfNFloquet():
     q = [2]
 
     hf_obj = starktools.MatrixHfNFFloquet(nmin, nmax, q)
-    m = SimpleNamespace(matrix=hf_obj([1]), lookuptable=hf_obj.lookuptable)
+    hf = hf_obj([1])
 
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)
@@ -283,7 +286,7 @@ def test_matrix_HfNFloquet():
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
             for q in  qq:
-                assert _el(m, (n, l, q), (n, l, q)) == 0
+                assert _el(hf_obj, (n, l, q), (n, l, q), hf) == 0
     
     # Check correct terms are coupled
     for n in nn:
@@ -296,9 +299,9 @@ def test_matrix_HfNFloquet():
                         for q in qq:
                             for q2 in qq:
                                 if np.abs(q-q2) == 1:
-                                    if _el(m, (n, l, q), (n2, l2, q2)) == 0:
+                                    if _el(hf_obj, (n, l, q), (n2, l2, q2), hf) == 0:
                                         print(n,l,q,n2,l2,q2)
-                                    assert _el(m, (n, l, q), (n2, l2, q2)) != 0
+                                    assert _el(hf_obj, (n, l, q), (n2, l2, q2), hf) != 0
 
 
 def test_matrix_HfNFloquet_two_colors():
@@ -338,8 +341,8 @@ def test_matrix_HfNFloquet_two_colors():
     famps = (12, 0.1)
 
     hf_obj = starktools.MatrixHfNFFloquet(nmin, nmax, q)
-    m = SimpleNamespace(matrix=hf_obj(famps), lookuptable=hf_obj.lookuptable)
-    
+    hf = hf_obj(famps)
+
 
     for b1 in starktools.nlqqbasis(nmin, nmax, q):
         n1, l1, qa1, qb1 = b1
@@ -348,7 +351,7 @@ def test_matrix_HfNFloquet_two_colors():
             if np.abs(l1-l2)==1:
                 if np.abs(qa1-qa2) == 1 or np.abs(qb1-qb2) == 1:
                     elm = matrix_elm(b1+b2, famps[0], famps[1], nmax)
-                    assert _el(m, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2)) == approx(elm, rel=10e-10)
+                    assert _el(hf_obj, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2), hf) == approx(elm, rel=10e-10)
 
 
 def test_init_NFlouet_with_single_ac_fields():
@@ -373,7 +376,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     q = (2,2)
     f = (0.8,0.5)
     hf_obj = starktools.MatrixHfNFFloquet(nmin, nmax, q)
-    h = SimpleNamespace(matrix=hf_obj(f), lookuptable=hf_obj.lookuptable)
+    hf = hf_obj(f)
 
     n1 = 2
     l1 = 0
@@ -384,7 +387,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     ma2 = 1
     mb2 = 2
     
-    assert (_el(h, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2)) != 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) != 0)
 
     n1 = 2
     l1 = 0
@@ -403,7 +406,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     elm = radint * angularElem
 
     val = 0.5*elm*f[0] + 0.5*elm*f[1]
-    assert (_el(h, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2)) == 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) == 0)
 
     n1 = 2
     l1 = 0
@@ -414,7 +417,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     ma2 = 2
     mb2 = 2
     
-    assert (_el(h, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2)) == 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) == 0)
 
 
 @pytest.mark.slow
