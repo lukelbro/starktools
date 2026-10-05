@@ -1,3 +1,5 @@
+import functools
+
 import starktools
 import numpy as np
 import pytest
@@ -310,9 +312,13 @@ def test_matrix_HfNFloquet_two_colors():
     which q` = q ± 1, and l` = l ± 1
     """
 
-    def matrix_elm(basis, f1, f2, nmax):
+    @functools.cache
+    def reference_element(n1, l1, n2, l2):
+        return qd.calc_matrix_element(n1, l1, n2, l2, nmax)
+
+    def matrix_elm(basis, f1, f2):
         n1, l1, qa1, qb1, n2, l2, qa2, qb2 = basis
-        val = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
+        val = reference_element(n1, l1, n2, l2)
 
         elm = 0
         if np.abs(qa1-qa2) + np.abs(qb1-qb2) != 1:
@@ -350,7 +356,7 @@ def test_matrix_HfNFloquet_two_colors():
             n2, l2, qa2, qb2 = b2
             if np.abs(l1-l2)==1:
                 if np.abs(qa1-qa2) == 1 or np.abs(qb1-qb2) == 1:
-                    elm = matrix_elm(b1+b2, famps[0], famps[1], nmax)
+                    elm = matrix_elm(b1+b2, famps[0], famps[1])
                     assert _el(hf_obj, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2), hf) == approx(elm, rel=10e-10)
 
 
