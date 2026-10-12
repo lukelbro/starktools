@@ -1,4 +1,3 @@
-from .matrix import Matrix
 from .matrix_base import State, matrix
 from .constants import Constants
 from .matrix_stark import matrixH0, matrixHs
@@ -19,7 +18,6 @@ from .matrix_finestructure import (
 __all__ = [
     "Constants",
     "HELIUM_FS",
-    "Matrix",
     "QuantumDefects",
     "State",
     "Tools",
