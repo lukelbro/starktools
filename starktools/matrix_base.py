@@ -4,7 +4,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from .defects import ritz_defect
+from .defects import lookup_defect
 
 State = Tuple[int, ...]
 
@@ -35,11 +35,11 @@ class matrix(ABC):
             lookuptable[state] = index
         return states, lookuptable
 
-    def quantum_defect(self, n: int, l: int) -> float:
-        return ritz_defect(n, l, self.defects)
+    def quantum_defect(self, n: int, l: int, s: Optional[float] = None, j: Optional[float] = None) -> float:
+        return lookup_defect(self.defects, n, l, s, j)
 
-    def energy_level(self, n: int, l: int) -> float:
-        return -0.5 * (n - self.quantum_defect(n, l)) ** -2
+    def energy_level(self, n: int, l: int, s: Optional[float] = None, j: Optional[float] = None) -> float:
+        return -0.5 * (n - self.quantum_defect(n, l, s, j)) ** -2
 
     @property
     def num_states(self) -> int:

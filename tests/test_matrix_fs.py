@@ -4,6 +4,13 @@ from pytest import approx, raises
 
 
 quantumdefect_fs = starktools.quantumdefect_fs
+FS = starktools.QuantumDefects(starktools.HELIUM_FS)
+
+
+def fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
+    ns1 = n1 - FS.quantum_defect(n1, l1, s, j1)
+    ns2 = n2 - FS.quantum_defect(n2, l2, s, j2)
+    return quantumdefect_fs.dipole_matrix_element(ns1, l1, j1, mj1, ns2, l2, j2, mj2, q, s, nmax)
 
 df_triplet = {
         0 : [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
@@ -75,10 +82,10 @@ def test_compare_defect_triplet_vs_hf():
     l = 0
     s = 1
 
-    defects = quantumdefect_fs.calc_defect
+    defects = FS.quantum_defect
 
     qd = starktools.QuantumDefects(df_triplet)
-    defect_triplet = qd._get_qd(n, l)
+    defect_triplet = qd.quantum_defect(n, l)
     defect_fs = defects(n, l, s, 1)
     assert defect_triplet == approx(defect_fs)
 
@@ -90,7 +97,7 @@ def test_compare_defect_triplet_vs_hf():
         defect_fs 
         for i in range(2*j +1): #for weighting with mj
             dfs.append(defect_fs)
-    assert qd._get_qd(n, l) == approx(np.mean(dfs), rel=1e-3)
+    assert qd.quantum_defect(n, l) == approx(np.mean(dfs), rel=1e-3)
 
     l = 2
     J = [1,2,3]
@@ -101,7 +108,7 @@ def test_compare_defect_triplet_vs_hf():
         for i in range(2*j +1): #for weighting with mj
             dfs.append(defect_fs)
     
-    assert qd._get_qd(n, l) == approx(np.mean(dfs), rel=1e-3)
+    assert qd.quantum_defect(n, l) == approx(np.mean(dfs), rel=1e-3)
 
 
 
@@ -119,7 +126,7 @@ def test_compare_matrix_element_vs_triplets():
     q = 1
     nmax = 70
 
-    matrix_fs = quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax)
+    matrix_fs = fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax)
     qd = starktools.QuantumDefects(df_triplet)
     matrix_triplet = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
 
@@ -137,7 +144,7 @@ def test_compare_energy_level_vs_triplet():
     energy_triplet = qd.energy_level(n, l)
 
 
-    energy_fs = quantumdefect_fs.energylevel(n, l, s, j)
+    energy_fs = FS.energy_level(n, l, s, j)
     assert energy_fs == approx(energy_triplet, rel=1e-30)
 
     n = 55
@@ -146,15 +153,15 @@ def test_compare_energy_level_vs_triplet():
     j = 2
     qd = starktools.QuantumDefects(df_triplet)
     energy_triplet = qd.energy_level(n, l)
-    energy_fs = quantumdefect_fs.energylevel(n, l, s, j)
+    energy_fs = FS.energy_level(n, l, s, j)
     assert energy_fs == approx(energy_triplet, rel=1e-10)
 
 
 
 def test_calc_transition():
-    assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1,1, 2) == approx(-9.118568, rel=1e-7)
-    assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1, 1, 1) == approx(-9.118568, rel=1e-4)
-    assert quantumdefect_fs.calc_transition(55, 0, 1, 1, 55, 1, 1, 0) == approx(-9.118568, rel=1e-3)
+    assert FS.transition((55, 0, 1, 1), (55, 1, 1, 2)) == approx(-9.118568, rel=1e-7)
+    assert FS.transition((55, 0, 1, 1), (55, 1, 1, 1)) == approx(-9.118568, rel=1e-4)
+    assert FS.transition((55, 0, 1, 1), (55, 1, 1, 0)) == approx(-9.118568, rel=1e-3)
 
 def test_calc_transitions():
     def calc_transition( n1, l1, n2, l2):
@@ -178,7 +185,7 @@ def test_calc_transitions():
             if transition_triplet == 0:
                 pass
             else:
-                assert calc_transition(n1, l1, n2, l2)  == approx(quantumdefect_fs.calc_transition(n1, l1, s1, j1, n2, l2, s2, j2), rel=1e-4)
+                assert calc_transition(n1, l1, n2, l2)  == approx(FS.transition((n1, l1, s1, j1), (n2, l2, s2, j2)), rel=1e-4)
 
 
 def test_matrix_fshs():
@@ -190,7 +197,7 @@ def test_matrix_fshs():
                 n1, l1, s, j1, mj1 = state1
                 for j, state2 in enumerate(self.states):        
                     n2, l2, s, j2, mj2 = state2
-                    matrix[i, j] = starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax)
+                    matrix[i, j] = fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, self.polarization, s, self.nmax)
             return matrix
     
     M_poor = matrixfsHs_poor(8,9,1,1)
@@ -206,7 +213,7 @@ def test_matrix_fs_H0_floquet():
         n1, l1, s1, j1, mj1, q1 = state1
         for j in range(M.matrix.shape[1]):
             if i == j:
-                assert M[i,j] == starktools.quantumdefect_fs.energylevel(n1, l1, s1, j1) + freq * q1
+                assert M[i,j] == FS.energy_level(n1, l1, s1, j1) + freq * q1
             else:
                 assert M[i,j] == 0
 
@@ -222,7 +229,7 @@ def test_matrix_fs_Hf_floquet():
             state2 = hf.convert_index_to_state(j)
             n2, l2, s2, j2, mj2, q2 = state2
             if np.abs(q1-q2)==1:
-                assert M[i,j] == 0.5 * starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, hf.polarization, s1, hf.nmax)
+                assert M[i,j] == 0.5 * fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, hf.polarization, s1, hf.nmax)
             else:
                 assert M[i,j] == 0
 
@@ -243,7 +250,7 @@ def test_matrix_fs_Hs_floquet():
             state2 = M.convert_index_to_state(j)
             n2, l2, s2, j2, mj2, q2 = state2
             if np.abs(q1-q2)==0:
-                assert M.matrix[i,j] ==  starktools.quantumdefect_fs.dipoleMatrixElement(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
+                assert M.matrix[i,j] ==  fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, M.polarization, s1, M.nmax)
             else:
                 assert M.matrix[i,j] == 0
 
@@ -256,12 +263,12 @@ def test_mjmax_feature():
     frequency = 1.0
 
     # Test without mjmax (should include all possible mj values)
-    matrix_no_limit = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency)
+    matrix_no_limit = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency, defects={})
     states_no_limit = matrix_no_limit.states
     mj_values_no_limit = set(state[4] for state in states_no_limit)
     
     # Test with mjmax = 0.5 (should limit to |mj| <= 0.5)
-    matrix_limited = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency, mjmax=0.5)
+    matrix_limited = starktools.matrixfsH0F(nmin, nmax, S, qmax, frequency, mjmax=0.5, defects={})
     states_limited = matrix_limited.states
     mj_values_limited = set(state[4] for state in states_limited)
     
@@ -314,3 +321,11 @@ def test_mjmax_feature_basis_generation():
     # Each regular state should appear (2*qmax + 1) times in Floquet basis
     expected_floquet_count = len(states_limited) * (2 * qmax + 1)
     assert len(floquet_states_limited) == expected_floquet_count
+
+def test_matrix_fs_defects_injection():
+    h0 = starktools.matrixfsH0(4, 5, 1)
+    h0_hyd = starktools.matrixfsH0(4, 5, 1, defects={})
+    assert h0.defects is starktools.HELIUM_FS
+    for i, (n, l, s, j, mj) in enumerate(h0.states):
+        assert h0[i][i] == FS.energy_level(n, l, s, j)
+        assert h0_hyd[i][i] == -0.5 / n ** 2

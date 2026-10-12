@@ -10,15 +10,15 @@ from .matrixNFFloquet_v2 import (
 class matrixH0F(MatrixH0NFFloquet):
     """Single-field Floquet diagonal Hamiltonian (one oscillating field)."""
 
-    def __init__(self, nmin: int, nmax: int, q: int, frequency: float) -> None:
-        super().__init__(nmin, nmax, [q], [frequency])
+    def __init__(self, nmin: int, nmax: int, q: int, frequency: float, defects: Optional[Dict] = None) -> None:
+        super().__init__(nmin, nmax, [q], [frequency], defects)
 
 
 class matrixHsF(MatrixHsNFFloquet):
     """Single-field Floquet DC coupling Hamiltonian."""
 
-    def __init__(self, nmin: int, nmax: int, q: int) -> None:
-        super().__init__(nmin, nmax, [q])
+    def __init__(self, nmin: int, nmax: int, q: int, defects: Optional[Dict] = None) -> None:
+        super().__init__(nmin, nmax, [q], defects)
 
 
 class matrixHfF(MatrixHfNFFloquet):
@@ -28,5 +28,5 @@ class matrixHfF(MatrixHfNFFloquet):
     full matrix for a given field amplitude by calling the instance: ``hf([f])``.
     """
 
-    def __init__(self, nmin: int, nmax: int, q: int) -> None:
-        super().__init__(nmin, nmax, [q])
+    def __init__(self, nmin: int, nmax: int, q: int, defects: Optional[Dict] = None) -> None:
+        super().__init__(nmin, nmax, [q], defects)

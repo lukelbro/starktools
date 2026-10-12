@@ -1,5 +1,5 @@
 import numpy as np
-from .defects import ritz_defect
+from .defects import lookup_defect
 
 class Matrix:
     def __init__(self, nmin: int, nmax: int):
@@ -78,7 +78,7 @@ class Matrix:
         return m
     
     def _get_qd(self, n, l):
-        return ritz_defect(n, l, self.defects)
+        return lookup_defect(self.defects, n, l)
 
     def __repr__(self):
         return str(self.matrix)

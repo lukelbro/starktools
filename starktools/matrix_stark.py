@@ -11,10 +11,24 @@ from .tools import Tools
 
 
 @functools.cache
-def _radial_integral(ns1: float, l1: int, ns2: float, l2: int, nmax: int) -> float:
-    wf1 = Tools.numerov(ns1, l1, nmax)
-    wf2 = Tools.numerov(ns2, l2, nmax)
-    return Tools.numerov_calc_matrix_element(wf1, wf2)
+def _numerov(ns: float, l: int, nmax: int):
+    return Tools.numerov(ns, l, nmax)
+
+
+@functools.cache
+def radial_integral(ns1: float, l1: int, ns2: float, l2: int, nmax: int) -> float:
+    """Radial overlap of Numerov wavefunctions at effective quantum numbers ns1, ns2."""
+    return Tools.numerov_calc_matrix_element(_numerov(ns1, l1, nmax), _numerov(ns2, l2, nmax))
+
+
+def angular_factor(l2: int, ml: int = 0) -> float:
+    """Angular part of <l2 - 1, ml| z |l2, ml>."""
+    return sqrt((l2 ** 2 - ml ** 2) / ((2 * l2 + 1) * (2 * l2 - 1)))
+
+
+def clear_cache() -> None:
+    _numerov.cache_clear()
+    radial_integral.cache_clear()
 
 
 class matrixH0(matrix):
@@ -56,9 +70,7 @@ class matrixHs(matrix):
                 if l2 != l1 + 1:
                     continue
                 ns2 = n2 - self.quantum_defect(n2, l2)
-                radial = _radial_integral(ns1, l1, ns2, l2, self.nmax)
-                angular = sqrt((l2 ** 2 - self.ml ** 2) / ((2 * l2 + 1) * (2 * l2 - 1)))
-                value = radial * angular
+                value = radial_integral(ns1, l1, ns2, l2, self.nmax) * angular_factor(l2, self.ml)
                 m[i, j] = value
                 m[j, i] = value
         return m

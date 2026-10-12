@@ -77,4 +77,4 @@ def test_matrixH0_diagonal():
     assert np.all(off_diag == 0)
     qd = starktools.QuantumDefects(defects)
     for i, (n, l) in enumerate(h.states):
-        assert h[i][i] == -0.5 * (n - qd._get_qd(n, l)) ** (-2)
+        assert h[i][i] == -0.5 * (n - qd.quantum_defect(n, l)) ** (-2)
