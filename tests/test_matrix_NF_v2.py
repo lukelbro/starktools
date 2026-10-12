@@ -2,10 +2,10 @@ import starktools
 import numpy as np
 import pytest
 from pytest import approx
-from starktools.matrixNFFloquet_v2 import (
-    MatrixH0NFFloquet,
-    MatrixHsNFFloquet,
-    MatrixHfNFFloquet,
+from starktools import (
+    matrixH0NF,
+    matrixHsNF,
+    matrixHfNF,
 )
 from starktools import matrix_stark
 from starktools.matrix_base import matrix
@@ -24,14 +24,14 @@ QD = starktools.QuantumDefects(DEFECTS)
 
 
 # ---------------------------------------------------------------------------
-# MatrixH0NFFloquet
+# matrixH0NF
 # ---------------------------------------------------------------------------
 
 def test_h0_diagonal_structure():
     nmin, nmax = 2, 4
     qmaxs = [1, 1]
     freqs = [3.0, 5.0]
-    h0 = MatrixH0NFFloquet(nmin, nmax, qmaxs, freqs, defects=DEFECTS)
+    h0 = matrixH0NF(nmin, nmax, qmaxs, freqs, defects=DEFECTS)
 
     for i, state in enumerate(h0.states):
         n, l = state[0], state[1]
@@ -46,11 +46,11 @@ def test_h0_diagonal_structure():
 
 
 # ---------------------------------------------------------------------------
-# MatrixHsNFFloquet
+# matrixHsNF
 # ---------------------------------------------------------------------------
 
 def test_hs_selection_rules():
-    hs = MatrixHsNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hs = matrixHsNF(3, 5, [1, 1], defects=DEFECTS)
     for i, s1 in enumerate(hs.states):
         n1, l1, *q1 = s1
         for j, s2 in enumerate(hs.states):
@@ -61,7 +61,7 @@ def test_hs_selection_rules():
 
 def test_hs_values_match_quantumdefects():
     nmin, nmax = 3, 5
-    hs = MatrixHsNFFloquet(nmin, nmax, [1, 1], defects=DEFECTS)
+    hs = matrixHsNF(nmin, nmax, [1, 1], defects=DEFECTS)
     qd = QD
     reference = qd.calc_matrix_element(3, 0, 3, 1, nmax=nmax)
 
@@ -73,24 +73,24 @@ def test_hs_values_match_quantumdefects():
 
 
 def test_hs_hermitian():
-    hs = MatrixHsNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hs = matrixHsNF(3, 5, [1, 1], defects=DEFECTS)
     assert hs.matrix == approx(hs.matrix.T)
 
 
 # ---------------------------------------------------------------------------
-# MatrixHfNFFloquet
+# matrixHfNF
 # ---------------------------------------------------------------------------
 
 def test_hf_num_unit_matrices():
-    hf2 = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf2 = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     assert len(hf2.matrix) == 2
 
-    hf3 = MatrixHfNFFloquet(3, 5, [1, 1, 1], defects=DEFECTS)
+    hf3 = matrixHfNF(3, 5, [1, 1, 1], defects=DEFECTS)
     assert len(hf3.matrix) == 3
 
 
 def test_hf_unit_matrices_disjoint():
-    hf = MatrixHfNFFloquet(3, 5, [2, 2], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [2, 2], defects=DEFECTS)
     masks = [M != 0 for M in hf.matrix]
     for a in range(len(masks)):
         for b in range(a + 1, len(masks)):
@@ -99,7 +99,7 @@ def test_hf_unit_matrices_disjoint():
 
 
 def test_hf_call_linearity():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     k = 3.7
     diff = hf([k, 1.0]) - hf([1.0, 1.0])
     expected = (k - 1) * hf.matrix[0]
@@ -107,7 +107,7 @@ def test_hf_call_linearity():
 
 
 def test_hf_selection_rules():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     M = sum(hf.matrix)
     for i, s1 in enumerate(hf.states):
         n1, l1, *q1 = s1
@@ -121,20 +121,20 @@ def test_hf_selection_rules():
 
 
 def test_hf_hermitian():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     for M in hf.matrix:
         assert M == approx(M.T)
 
 
 def test_hf_call_hermitian():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     M = hf([2.3, 0.7])
     assert M == approx(M.T)
 
 
 def test_hf_cache_efficiency():
     matrix_stark.clear_cache()
-    hf = MatrixHfNFFloquet(3, 5, [2, 2], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [2, 2], defects=DEFECTS)
     info = matrix_stark.radial_integral.cache_info()
     n_atomic_pairs = sum(
         1 for n1, l1 in nlbasis(3, 5)
@@ -166,13 +166,13 @@ def test_missing_generate_matrix_raises():
 # ---------------------------------------------------------------------------
 
 def test_hf_matrix_tuple_unpacking():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     m1, m2 = hf.matrix
     assert m1.shape == (hf.num_states, hf.num_states)
     assert m2.shape == (hf.num_states, hf.num_states)
 
 
 def test_hf_np_asarray_raises():
-    hf = MatrixHfNFFloquet(3, 5, [1, 1], defects=DEFECTS)
+    hf = matrixHfNF(3, 5, [1, 1], defects=DEFECTS)
     with pytest.raises(TypeError):
         np.asarray(hf)
