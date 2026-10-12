@@ -11,7 +11,7 @@ DEFECTS = {
     5: [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
     6: [2.3047609e-05, -0.0002610672, -4.04e-06, 0],
 }
-QD = starktools.QuantumDefects(DEFECTS)
+QD = starktools.quantumdefects(DEFECTS)
 
 def test_matrixH0F_attributes():
     nmin = 1

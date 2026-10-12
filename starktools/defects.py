@@ -121,7 +121,7 @@ def lookup_defect(defects, n, l, s=None, j=None):
     return ritz_defect(n, row)
 
 
-class QuantumDefects:
+class quantumdefects:
     """Quantum defects and energies from a table keyed by l, or by l, S, J."""
 
     def __init__(self, defects=None):

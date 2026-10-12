@@ -4,7 +4,7 @@ from pytest import approx, raises
 
 
 quantumdefect_fs = starktools.quantumdefect_fs
-FS = starktools.QuantumDefects(starktools.HELIUM_FS)
+FS = starktools.quantumdefects(starktools.HELIUM_FS)
 
 
 def fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax):
@@ -84,7 +84,7 @@ def test_compare_defect_triplet_vs_hf():
 
     defects = FS.quantum_defect
 
-    qd = starktools.QuantumDefects(df_triplet)
+    qd = starktools.quantumdefects(df_triplet)
     defect_triplet = qd.quantum_defect(n, l)
     defect_fs = defects(n, l, s, 1)
     assert defect_triplet == approx(defect_fs)
@@ -127,7 +127,7 @@ def test_compare_matrix_element_vs_triplets():
     nmax = 70
 
     matrix_fs = fs_dipole(n1, l1, j1, mj1, n2, l2, j2, mj2, q, s, nmax)
-    qd = starktools.QuantumDefects(df_triplet)
+    qd = starktools.quantumdefects(df_triplet)
     matrix_triplet = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
 
     
@@ -140,7 +140,7 @@ def test_compare_energy_level_vs_triplet():
     l = 0
     s = 1
     j = 1
-    qd = starktools.QuantumDefects(df_triplet)
+    qd = starktools.quantumdefects(df_triplet)
     energy_triplet = qd.energy_level(n, l)
 
 
@@ -151,7 +151,7 @@ def test_compare_energy_level_vs_triplet():
     l = 1
     s = 1
     j = 2
-    qd = starktools.QuantumDefects(df_triplet)
+    qd = starktools.quantumdefects(df_triplet)
     energy_triplet = qd.energy_level(n, l)
     energy_fs = FS.energy_level(n, l, s, j)
     assert energy_fs == approx(energy_triplet, rel=1e-10)
@@ -165,7 +165,7 @@ def test_calc_transition():
 
 def test_calc_transitions():
     def calc_transition( n1, l1, n2, l2):
-        qd = starktools.QuantumDefects(df_triplet)
+        qd = starktools.quantumdefects(df_triplet)
         if (n1 == n2) and (l1==l2):
             return 0
         return (qd.energy_level(n1, l1) - qd.energy_level(n2, l2)) * starktools.Constants.E_He / starktools.Constants.h * 1e-9

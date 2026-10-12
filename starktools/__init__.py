@@ -2,7 +2,7 @@ from .matrix_base import State, matrix
 from .constants import Constants
 from .matrix_stark import matrixH0, matrixHs
 from .matrix_floquet import matrixH0F, matrixH0NF, matrixHfF, matrixHfNF, matrixHsF, matrixHsNF
-from .defects import HELIUM_FS, QuantumDefects, helium_defects, lookup_defect, ritz_defect
+from .defects import HELIUM_FS, quantumdefects, helium_defects, lookup_defect, ritz_defect
 from .tools import Tools
 from .basis import nlbasis, nlqbasis, nlqqbasis, qqbasis
 from .matrix_finestructure import (
@@ -18,7 +18,6 @@ from .matrix_finestructure import (
 __all__ = [
     "Constants",
     "HELIUM_FS",
-    "QuantumDefects",
     "State",
     "Tools",
     "basis_fs",
@@ -43,5 +42,6 @@ __all__ = [
     "nlqqbasis",
     "qqbasis",
     "quantumdefect_fs",
+    "quantumdefects",
     "ritz_defect",
 ]

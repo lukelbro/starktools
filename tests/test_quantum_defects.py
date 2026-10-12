@@ -16,17 +16,17 @@ defects = {
 def test_numerov_method():
     nmin = 50
     nmax = 53
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     wf1 = starktools.Tools.numerov(19, 0 ,19)
     assert wf1.y[100] == approx(0.00023777622350765846, rel=1e-10, abs=1e-14)
 
 def test_numerov_method_consistent_r():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
     ns1 = n1 - qd.quantum_defect(13, 0)
     ns2 = n1 - qd.quantum_defect(13, 1)
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     wf1  = starktools.Tools.numerov(ns1, 1, 19)
     wf2  = starktools.Tools.numerov(ns2, 0, 19)
@@ -47,7 +47,7 @@ def test_numerov():
 
 
 def test_defect():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     assert qd.quantum_defect(55, 0) == approx(0.296669286287103, abs=1e-11)
     assert qd.quantum_defect(55, 1) == approx(0.068354108675390, abs=1e-11)
 
@@ -71,13 +71,13 @@ def test_ritz_defect_not_converging_raises():
 
 
 def test_lookup_beyond_table_is_hydrogenic():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     assert qd.quantum_defect(55, 7) == 0.0
-    assert starktools.QuantumDefects().quantum_defect(55, 0) == 0.0
+    assert starktools.quantumdefects().quantum_defect(55, 0) == 0.0
 
 
 def test_lookup_fine_structure():
-    qd = starktools.QuantumDefects(starktools.HELIUM_FS)
+    qd = starktools.quantumdefects(starktools.HELIUM_FS)
     assert qd.quantum_defect(55, 1, 1, 2) == starktools.ritz_defect(55, starktools.HELIUM_FS[1][1][2])
     assert qd.quantum_defect(55, 7, 1, 8) == 0.0
     with raises(KeyError):
@@ -99,38 +99,38 @@ def test_helium_defects():
 
 
 def test_transition():
-    qd = starktools.QuantumDefects(starktools.HELIUM_FS)
+    qd = starktools.quantumdefects(starktools.HELIUM_FS)
     nu = qd.transition((55, 0, 1, 1), (55, 1, 1, 2))
     assert nu == approx(-9.118568, rel=1e-7)
     expected = (qd.energy_level(55, 0, 1, 1) - qd.energy_level(55, 1, 1, 2)) * starktools.Constants.E_He / starktools.Constants.h * 1e-9
     assert nu == expected
-    assert starktools.QuantumDefects(defects).transition((55, 0), (55, 1)) == approx(nu, rel=1e-7)
+    assert starktools.quantumdefects(defects).transition((55, 0), (55, 1)) == approx(nu, rel=1e-7)
 
 
 def test_energy_level():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     e55p = qd.energy_level(55, 0)
     assert e55p == approx(-1.6708692418996766e-04, rel=1e-12, abs=1e-16)
 
 def test_energy_level_si():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     e55p = starktools.Constants.E_He * qd.energy_level(55, 0)
     assert e55p == approx(-7.283563680292469e-22, rel=1e-6, abs=0)
 
 def test_calc_matrix_element():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     element = qd.calc_matrix_element(56, 0, 55, 1, 70)
     assert element == approx(1190, abs=10)
     element = qd.calc_matrix_element(55, 1, 56, 0, 70)
     assert element == approx(1190, abs=10)
 
 def test_forbidden():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     assert qd.calc_matrix_element(13, 0, 13, 2, 19) == 0
 
 
 def test_integral_r_comparison():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
     l1 = 1
     n2 = 13
@@ -151,7 +151,7 @@ def test_integral_r_comparison():
 
 
 def test_hermitian():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
     ns1 = n1 - qd.quantum_defect(13, 0)
     ns2 = n1 - qd.quantum_defect(13, 1)

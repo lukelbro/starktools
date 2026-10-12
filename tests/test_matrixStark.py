@@ -14,7 +14,7 @@ defects = {
 
 def test_matrixHs_matches_quantumdefects():
     h = starktools.matrixHs(3, 5, 0)
-    qd = starktools.QuantumDefects()
+    qd = starktools.quantumdefects()
     i = h.lookuptable[(3, 1)]
     j = h.lookuptable[(3, 0)]
     assert h[i][j] == qd.calc_matrix_element(3, 1, 3, 0, nmax=5)
@@ -53,7 +53,7 @@ def test_matrixHs_coupling():
     nmax = 15
 
     h = starktools.matrixHs(nmin, nmax, 0, defects)
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     for state in h.states:
         n1, l1 = state
@@ -75,6 +75,6 @@ def test_matrixH0_diagonal():
     off_diag = h.matrix.copy()
     np.fill_diagonal(off_diag, 0)
     assert np.all(off_diag == 0)
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     for i, (n, l) in enumerate(h.states):
         assert h[i][i] == -0.5 * (n - qd.quantum_defect(n, l)) ** (-2)

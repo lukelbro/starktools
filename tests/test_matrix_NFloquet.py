@@ -15,7 +15,7 @@ DEFECTS = {
     5: [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
     6: [2.3047609e-05, -0.0002610672, -4.04e-06, 0],
 }
-QD = starktools.QuantumDefects(DEFECTS)
+QD = starktools.quantumdefects(DEFECTS)
 
 
 def _el(m, b1, b2, matrix=None):
@@ -93,7 +93,7 @@ def test_H0NFloquet_sample_vals():
 
 def test_HsNFloquet_sample_vals():
     h = starktools.matrixHsNF(3,5,[1,1], defects=DEFECTS)
-    qd = starktools.QuantumDefects(DEFECTS)
+    qd = starktools.quantumdefects(DEFECTS)
     assert (_el(h, (3, 1, 0, 0), (3, 0, 0, 0)) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
     assert (_el(h, (3, 0, 0, 0), (3, 1, 0, 0)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
     assert (_el(h, (3, 0, 0, 0), (3, 1, 0, 0)) == _el(h, (3, 1, 0, 0), (3, 0, 0, 0)))
@@ -106,7 +106,7 @@ def test_HfNFloquet_sample_vals():
     # Double field strength to account for 0.5*f
     hf_obj = starktools.matrixHfNF(3,5,[1,1], defects=DEFECTS)
     hf = hf_obj([2,2])
-    qd = starktools.QuantumDefects(DEFECTS)
+    qd = starktools.quantumdefects(DEFECTS)
     assert (_el(hf_obj, (3, 0, 0, 0), (3, 1, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
     assert (_el(hf_obj, (3, 1, 0, 0), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
     assert (_el(hf_obj, (3, 1, 1, 1), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
@@ -347,7 +347,7 @@ def test_matrix_HfNFloquet_two_colors():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
 
     nmin = 13
@@ -438,7 +438,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
 def test_ac_starkshift_one_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -456,7 +456,7 @@ def test_ac_starkshift_one_ac_field1():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -484,7 +484,7 @@ def test_ac_starkshift_one_ac_field1():
 def test_ac_starkshift_two_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -502,7 +502,7 @@ def test_ac_starkshift_two_ac_field1():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -530,7 +530,7 @@ def test_ac_starkshift_two_ac_field1():
 def test_ac_starkshift_two_ac_field2():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -548,7 +548,7 @@ def test_ac_starkshift_two_ac_field2():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -579,7 +579,7 @@ def test_ac_starkshift_two_ac_field2():
 def test_ac_starkshift_two_ac_field3():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -597,7 +597,7 @@ def test_ac_starkshift_two_ac_field3():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -635,7 +635,7 @@ def test_ac_starkshift_two_ac_field3():
 def test_ac_starkshift_commensurate():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -653,7 +653,7 @@ def test_ac_starkshift_commensurate():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -684,7 +684,7 @@ def test_ac_starkshift_commensurate():
 def test_dc_stark_shift():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
@@ -765,7 +765,7 @@ def test_dc_stark_shift():
 def test_shift_10_khz_ac_comparison_with_HF():
      
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
+        qd = starktools.quantumdefects(defects)
         energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
