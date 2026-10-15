@@ -90,6 +90,8 @@ class matrixHfNF(matrix):
     full matrix for given field amplitudes by calling the instance: ``hf(famps)``.
     """
 
+    matrix: Tuple[NDArray[np.float64], ...]  # type: ignore[assignment]  # one unit matrix per field
+
     def __init__(
         self,
         nmin: int,
@@ -108,7 +110,7 @@ class matrixHfNF(matrix):
         )
         self.matrix = self.generate_matrix()
 
-    def generate_matrix(self) -> Tuple[NDArray[np.float64], ...]:
+    def generate_matrix(self) -> Tuple[NDArray[np.float64], ...]:  # type: ignore[override]
         N = self.N
         matrices: List[NDArray[np.float64]] = [
             np.zeros((self.num_states, self.num_states)) for _ in range(N)
@@ -133,7 +135,7 @@ class matrixHfNF(matrix):
     def __call__(self, famps: List[float]) -> NDArray[np.float64]:
         if len(famps) != self.N:
             raise ValueError(f"Expected {self.N} amplitudes, got {len(famps)}")
-        return sum(f * M for f, M in zip(famps, self.matrix))
+        return sum((f * M for f, M in zip(famps, self.matrix)), np.zeros_like(self.matrix[0]))
 
     def __array__(self, dtype=None):
         raise TypeError(

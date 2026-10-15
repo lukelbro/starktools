@@ -1,18 +1,20 @@
 import functools
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Hashable, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 from numpy.typing import NDArray
 from sympy.physics.wigner import wigner_3j, wigner_6j
 
 from .defects import HELIUM_FS
-from .matrix_base import matrix
+from .matrix_base import State, matrix
 from .tools import Tools
 
-_fs_cached_functions = []
+_T = TypeVar("_T")
+_K = TypeVar("_K", bound=Hashable)
+_fs_cached_functions: List[Any] = []
 
 
-def _fs_cached(func):
+def _fs_cached(func: Callable[..., _T]) -> Callable[..., _T]:
     cached_func = functools.cache(func)
     _fs_cached_functions.append(cached_func)
     return cached_func
@@ -20,13 +22,13 @@ def _fs_cached(func):
 
 class quantumdefect_fs:
     @staticmethod
-    def clear_cache():
+    def clear_cache() -> None:
         for func in _fs_cached_functions:
             func.cache_clear()
 
     @staticmethod
     @_fs_cached
-    def radial_integral(ns1, l1, ns2, l2, nmax):
+    def radial_integral(ns1: float, l1: int, ns2: float, l2: int, nmax: int) -> float:
         """Radial overlap of Numerov wavefunctions at effective quantum numbers ns1, ns2."""
         wf1 = quantumdefect_fs.numerov(ns1, l1, nmax)
         wf2 = quantumdefect_fs.numerov(ns2, l2, nmax)
@@ -34,12 +36,12 @@ class quantumdefect_fs:
 
     @staticmethod
     @_fs_cached
-    def numerov(n, l, nmax):
+    def numerov(n: float, l: int, nmax: int) -> Tools.numerov:
             return Tools.numerov(n, l, nmax)
 
     @staticmethod
     @_fs_cached
-    def angular_integral(l1, j1, mj1, l2, j2, mj2, q, s):
+    def angular_integral(l1: int, j1: float, mj1: float, l2: int, j2: float, mj2: float, q: int, s: float) -> float:
         max_l = np.max([l1, l2])
         phase = (-1)**(-mj2+s+max_l)
 
@@ -51,7 +53,7 @@ class quantumdefect_fs:
     
     @staticmethod
     @_fs_cached
-    def dipole_matrix_element(ns1, l1, j1, mj1, ns2, l2, j2, mj2, q, s, nmax):
+    def dipole_matrix_element(ns1: float, l1: int, j1: float, mj1: float, ns2: float, l2: int, j2: float, mj2: float, q: int, s: float, nmax: int) -> float:
         """
         Calculate the dipole matrix element for a transition between two fine-structure states in an atom. 
         This method takes into account the angular momentum of the photon.
@@ -95,7 +97,7 @@ class quantumdefect_fs:
         """
 
         if np.abs(l1-l2) != 1:
-            return 0
+            return 0.0
     
         radialInt = quantumdefect_fs.radial_integral(ns1, l1, ns2, l2, nmax)
         angularInt = quantumdefect_fs.angular_integral(l1, j1, mj1, l2, j2, mj2, q, s)
@@ -104,14 +106,14 @@ class quantumdefect_fs:
 
 class basis_fs:
     @staticmethod
-    def float_range(start, stop, step):
+    def float_range(start: float, stop: float, step: float) -> Iterator[float]:
         current = start
         while current < stop:
             yield current
             current += step
 
     @staticmethod
-    def generate_atom_levels_fs(n_min, n_max, S, lmax=None, mjmax=None):
+    def generate_atom_levels_fs(n_min: int, n_max: int, S: float, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> Iterator[Tuple[float, ...]]:
         """
         Generate quantum numbers for atomic levels in fine structure.
 
@@ -141,7 +143,7 @@ class basis_fs:
                                 yield n, l, S, j, m_j
     
     @staticmethod
-    def generate_atom_levels_fs_floquet(n_min, n_max, S, qmax, lmax=None, mjmax=None):
+    def generate_atom_levels_fs_floquet(n_min: int, n_max: int, S: float, qmax: int, lmax: Optional[int] = None, mjmax: Optional[float] = None) -> Iterator[Tuple[float, ...]]:
         for n, l, S, j, m_j in basis_fs.generate_atom_levels_fs(n_min, n_max, S, lmax=lmax, mjmax=mjmax):
             q = - qmax
             while q <= qmax:
@@ -149,14 +151,14 @@ class basis_fs:
                 q += 1
 
 
-def _group_indices(states, key):
-    groups = {}
+def _group_indices(states: Sequence[State], key: Callable[[State], _K]) -> Dict[_K, List[int]]:
+    groups: Dict[_K, List[int]] = {}
     for idx, state in enumerate(states):
         groups.setdefault(key(state), []).append(idx)
     return groups
 
 
-def _dipole(m, state1, state2):
+def _dipole(m: Union["matrixfsHs", "matrixfsHsF", "matrixfsHfF"], state1: State, state2: State) -> float:
     n1, l1, s, j1, mj1 = state1[:5]
     n2, l2, _, j2, mj2 = state2[:5]
     ns1 = n1 - m.quantum_defect(n1, l1, s, j1)
@@ -276,6 +278,8 @@ class matrixfsHfF(matrix):
     matrix for a given field amplitude by calling the instance: ``hf([f])``.
     """
 
+    matrix: Tuple[NDArray[np.float64], ...]  # type: ignore[assignment]  # one unit matrix per field
+
     def __init__(self, nmin: int, nmax: int, S: float, polarization: int, qmax: int, lmax: Optional[int] = None, mjmax: Optional[float] = None, defects: Optional[Dict] = None) -> None:
         self.nmin = nmin
         self.nmax = nmax
@@ -291,7 +295,7 @@ class matrixfsHfF(matrix):
         )
         self.matrix = self.generate_matrix()
 
-    def generate_matrix(self) -> Tuple[NDArray[np.float64]]:
+    def generate_matrix(self) -> Tuple[NDArray[np.float64], ...]:  # type: ignore[override]
         m = np.zeros((self.num_states, self.num_states))
         groups = _group_indices(self.states, lambda s: (s[1], s[5]))
         for (l1, q1), indices1 in groups.items():

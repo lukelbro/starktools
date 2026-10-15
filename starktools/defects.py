@@ -1,4 +1,5 @@
 from math import sqrt
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 
@@ -6,7 +7,7 @@ from .constants import Constants
 from .tools import Tools
 
 # Helium Ritz coefficients [d0, d2, d4, ...], keyed by l, S, J.
-HELIUM_FS = {
+HELIUM_FS: Dict[int, Dict[int, Dict[int, List[float]]]] = {
     0: {  # S states (l=0)
         0: {  # singlet
             0: [0.1397180648621, 0.02783573718, 0.0167922941, -0.001459031, 0.002922765]
@@ -80,7 +81,7 @@ HELIUM_FS = {
 _RTOL = 4 * np.finfo(float).eps
 
 
-def helium_defects(S, J=None):
+def helium_defects(S: int, J: Optional[Callable[[int], int]] = None) -> Dict[int, List[float]]:
     """One Ritz row per l from HELIUM_FS, for calculations without spin.
 
     ``J`` maps l to the level used for that l; the default is the stretched
@@ -90,14 +91,15 @@ def helium_defects(S, J=None):
     return {l: HELIUM_FS[l][S][J(l)] for l in HELIUM_FS}
 
 
-def ritz_defect(n, coeffs, rtol=_RTOL, maxiter=10):
+def ritz_defect(n: float, coeffs: Union[float, Sequence[float]], rtol: float = _RTOL, maxiter: int = 10) -> float:
     """Quantum defect from Ritz coefficients [d0, d2, d4, ...].
 
     Solves delta = sum_i d_i / (n - delta)^(2i) by fixed-point iteration from
     d0. A scalar is returned unchanged as an n-independent defect.
     """
     if np.ndim(coeffs) == 0:
-        return float(coeffs)
+        return float(cast(float, coeffs))
+    coeffs = cast(Sequence[float], coeffs)
     delta = coeffs[0]
     for _ in range(maxiter):
         new = sum(d / (n - delta) ** (2 * i) for i, d in enumerate(coeffs))
@@ -107,7 +109,7 @@ def ritz_defect(n, coeffs, rtol=_RTOL, maxiter=10):
     raise ValueError(f"Ritz expansion did not converge for n={n}, coefficients {coeffs}")
 
 
-def lookup_defect(defects, n, l, s=None, j=None):
+def lookup_defect(defects: Mapping[int, Any], n: float, l: int, s: Optional[float] = None, j: Optional[float] = None) -> float:
     """Quantum defect from a table keyed by l, or by l, S, J when s and j are given.
 
     l beyond the table is hydrogenic (zero defect); an S or J missing for a
@@ -124,22 +126,22 @@ def lookup_defect(defects, n, l, s=None, j=None):
 class quantumdefects:
     """Quantum defects and energies from a table keyed by l, or by l, S, J."""
 
-    def __init__(self, defects=None):
+    def __init__(self, defects: Optional[Mapping[int, Any]] = None) -> None:
         self.defects = {} if defects is None else defects
 
-    def quantum_defect(self, n, l, s=None, j=None):
+    def quantum_defect(self, n: float, l: int, s: Optional[float] = None, j: Optional[float] = None) -> float:
         return lookup_defect(self.defects, n, l, s, j)
 
-    def energy_level(self, n, l, s=None, j=None):
+    def energy_level(self, n: float, l: int, s: Optional[float] = None, j: Optional[float] = None) -> float:
         """Energy in Hartree."""
         return -0.5 * (n - self.quantum_defect(n, l, s, j)) ** (-2)
 
-    def transition(self, state1, state2):
+    def transition(self, state1: Tuple[Any, ...], state2: Tuple[Any, ...]) -> float:
         """E(state1) - E(state2) in GHz; states are (n, l) or (n, l, s, j)."""
         dE = self.energy_level(*state1) - self.energy_level(*state2)
         return dE * Constants.E_He / Constants.h * 1e-9
 
-    def calc_matrix_element(self, n1, l1, n2, l2, nmax, ml=0):
+    def calc_matrix_element(self, n1: int, l1: int, n2: int, l2: int, nmax: int, ml: int = 0) -> float:
         """
         Calculates the dipole transition moment between two states, including the angular
         and radial componenets.
@@ -158,7 +160,7 @@ class quantumdefects:
         radialInt = Tools.numerov_calc_matrix_element(wf1, wf2)
 
         # Angular component
-        angularElem = 0
+        angularElem = 0.0
         if l1>l2:
             angularElem = ((l2 + 1)**2 - ml**2)/((2*l2+3)*(2*l2+1))
             angularElem = sqrt(angularElem)

@@ -1,6 +1,6 @@
 import functools
 from math import sqrt
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,7 +11,7 @@ from .tools import Tools
 
 
 @functools.cache
-def _numerov(ns: float, l: int, nmax: int):
+def _numerov(ns: float, l: int, nmax: int) -> Tools.numerov:
     return Tools.numerov(ns, l, nmax)
 
 

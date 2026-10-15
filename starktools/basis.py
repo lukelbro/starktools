@@ -1,14 +1,16 @@
 import itertools
+from typing import Dict, Iterator, List, Tuple
+
 import numpy as np
 
 class nlbasis:
-    def __init__(self, nmin: int, nmax: int, ml=0):
+    def __init__(self, nmin: int, nmax: int, ml: int = 0) -> None:
         self.nmin = nmin
         self.nmax = nmax
         self.ml = ml
         self.basis_name = 'nlbasis'
     
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[int, int]]:
             n = self.nmin
             l = np.abs(self.ml)
             while n <= self.nmax:
@@ -19,7 +21,7 @@ class nlbasis:
                     l = np.abs(self.ml)
                     n += 1
         
-    def state_valid(self, state):
+    def state_valid(self, state: Tuple[int, ...]) -> bool:
         try:
             n, l = state
         except:
@@ -29,20 +31,20 @@ class nlbasis:
                 return True
         return False
     
-    def state_valid_raise_exception(self, state):
+    def state_valid_raise_exception(self, state: Tuple[int, ...]) -> None:
         if not self.state_valid(state):
             raise ValueError('{state} is invalid in {basis_name} with parameters {basis_parameters}'.format(state=state, basis_name=self.basis_name, basis_parameters=self.basis_parameters()))
     
-    def basis_parameters(self):
+    def basis_parameters(self) -> Dict[str, int]:
         return {'nmin': self.nmin, 'nmax': self.nmax, 'ml': self.ml}
 
 class nlqbasis:
-    def __init__(self, nmin: int, nmax: int, qmax:int):
+    def __init__(self, nmin: int, nmax: int, qmax: int) -> None:
         self.nmin = nmin
         self.nmax = nmax
         self.qmax = qmax
     
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[int, int, int]]:
         for n, l in nlbasis(self.nmin, self.nmax):
             q = -self.qmax
             while q <= self.qmax:
@@ -50,10 +52,10 @@ class nlqbasis:
                 q += 1
 
 class qqbasis:
-    def __init__(self, qmaxs:list):
+    def __init__(self, qmaxs: List[int]) -> None:
         self.qmaxs = qmaxs
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[int, ...]]:
         """
         Generates every integer combination between [-a, -b, -c, -d ] and [a , b, c, d].
         
@@ -72,12 +74,12 @@ class qqbasis:
             yield combination
 
 class nlqqbasis:
-    def __init__(self, nmin: int, nmax: int, qmaxs:list):
+    def __init__(self, nmin: int, nmax: int, qmaxs: List[int]) -> None:
         self.nmin = nmin
         self.nmax = nmax
         self.qmaxs = qmaxs
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[int, ...]]:
         for n, l in nlbasis(self.nmin, self.nmax):
             for q in qqbasis(self.qmaxs):
                 yield((n,l) +  q)

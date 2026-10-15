@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
 from .defects import lookup_defect
 
-State = Tuple[int, ...]
+State = Tuple[Any, ...]
 
 
 class matrix(ABC):
@@ -46,7 +46,7 @@ class matrix(ABC):
         return len(self.states)
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> Tuple[int, ...]:
         return self.matrix.shape
 
     def convert_state_to_index(self, state: State) -> int:
@@ -70,25 +70,25 @@ class matrix(ABC):
     def __getitem__(self, index: int):
         return self.matrix[index]
 
-    def _check_compatible(self, other: "matrix") -> None:
+    def _check_compatible(self, other: "_MatrixType") -> None:
         if self.states != other.states:
             raise ValueError("matrices are built on different basis states")
 
-    def __add__(self, other: "matrix") -> "matrix":
+    def __add__(self, other: "_MatrixType") -> "_matrix_view":
         self._check_compatible(other)
         return self._from_array(np.asarray(self.matrix) + np.asarray(other.matrix))
 
-    def __sub__(self, other: "matrix") -> "matrix":
+    def __sub__(self, other: "_MatrixType") -> "_matrix_view":
         self._check_compatible(other)
         return self._from_array(np.asarray(self.matrix) - np.asarray(other.matrix))
 
-    def __mul__(self, scalar: float) -> "matrix":
+    def __mul__(self, scalar: float) -> "_matrix_view":
         return self._from_array(np.asarray(self.matrix) * scalar)
 
-    def __rmul__(self, scalar: float) -> "matrix":
+    def __rmul__(self, scalar: float) -> "_matrix_view":
         return self._from_array(scalar * np.asarray(self.matrix))
 
-    def _from_array(self, array: NDArray[np.float64]) -> "matrix":
+    def _from_array(self, array: NDArray[np.float64]) -> "_matrix_view":
         """Wrap a numpy array in a matrix view sharing this basis."""
         new = _matrix_view.__new__(_matrix_view)
         new.basis = self.basis
@@ -97,6 +97,9 @@ class matrix(ABC):
         new.defects = self.defects
         new.matrix = array
         return new
+
+
+_MatrixType = matrix
 
 
 class _matrix_view(matrix):

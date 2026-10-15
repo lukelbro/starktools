@@ -25,3 +25,6 @@ test = [
 [tool.setuptools.packages.find]
 include = ["starktools*"]
 exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+starktools = ["py.typed"]

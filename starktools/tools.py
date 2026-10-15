@@ -11,6 +11,7 @@ class Tools:
 
             self.r, self.y, self.start, self.end = Tools.numerov.integrate(n, l, nmax)
 
+        @staticmethod
         def integrate(n: float, l: int, nmax = -1, rCore=0.65):
             """
             Calculate radial integral for given state using numerov approach.
@@ -85,6 +86,7 @@ class Tools:
             return r, y, iStart, iEnd
 
 
+    @staticmethod
     def numerov_calc_matrix_element(wf1, wf2):
         """
         Calculate the radial component of the transition matrix element.
