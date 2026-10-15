@@ -12,6 +12,7 @@ $$\Omega_{i,j} = \frac{\langle i| e\mathbf{r} \cdot \mathbf{E}_0 |j \rangle}{\hb
 
 ```
 import starktools as st
+qd = st.quantumdefects(st.helium_defects(S=1))  # triplet helium: 3S1, 3P2, 3D3, ...
 electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * st.Constants.e * st.Constants.a_He
 
 estrength = 0.1
@@ -20,11 +21,12 @@ rabi = electricDipoleMoment * estrength/st.Constants.hbar
 
 ```
 
+Transition frequency in GHz:
+
 ```
-def calc_transition(n1, l1, n2, l2):
-    return (qd.energy_level(n1, l1) - qd.energy_level(n2, l2)) * st.Constants.E_He / st.Constants.h * 1e-9
+qd.transition((56, 0), (55, 0))
 ```
 
 ```
-1/((calc_transition(56,0 , 55, 0)*10**9/starktools.Constants.c) + 1/(786.8166e-9))*10**9
+1/((qd.transition((56, 0), (55, 0))*10**9/st.Constants.c) + 1/(786.8166e-9))*10**9
 ```
