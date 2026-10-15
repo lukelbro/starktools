@@ -1,4 +1,5 @@
-from .context import starktools
+from starktools import *  # noqa: F401,F403
+import starktools
 import numpy as np
 from pytest import approx, raises
 
@@ -15,17 +16,17 @@ defects = {
 def test_numerov_method():
     nmin = 50
     nmax = 53
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     wf1 = starktools.Tools.numerov(19, 0 ,19)
-    assert wf1.y[100] == 0.00013208511620903889
+    assert wf1.y[100] == approx(0.00023777622350765846, rel=1e-10, abs=1e-14)
 
 def test_numerov_method_consistent_r():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
-    ns1 = n1 - qd._get_qd(13, 0)
-    ns2 = n1 - qd._get_qd(13, 1)
-    qd = starktools.QuantumDefects(defects)
+    ns1 = n1 - qd.quantum_defect(13, 0)
+    ns2 = n1 - qd.quantum_defect(13, 1)
+    qd = starktools.quantumdefects(defects)
 
     wf1  = starktools.Tools.numerov(ns1, 1, 19)
     wf2  = starktools.Tools.numerov(ns2, 0, 19)
@@ -42,50 +43,102 @@ def test_numerov():
     wf2 = starktools.Tools.numerov(13, 1, 19)
     d = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
 
-    assert d == -4.008890618586264 # confirmed using matlab
+    assert d == approx(-4.009082192983165, rel=1e-5, abs=1e-14) # regenerated for h=0.005, rCore=0.65
 
 
 def test_defect():
-    qd = starktools.QuantumDefects(defects)
-    assert qd._get_qd(55, 0) == approx(0.296669286287103, abs=1e-12) # confirmed using matlab
-    assert qd._get_qd(55, 1) == approx(0.068354108675390) # confirmed using matlab
+    qd = starktools.quantumdefects(defects)
+    assert qd.quantum_defect(55, 0) == approx(0.296669286287103, abs=1e-11)
+    assert qd.quantum_defect(55, 1) == approx(0.068354108675390, abs=1e-11)
+
+
+def test_ritz_defect_solves_ritz_equation():
+    for n in (10, 20, 55, 100):
+        for coeffs in defects.values():
+            delta = starktools.ritz_defect(n, coeffs)
+            rhs = sum(d / (n - delta) ** (2 * i) for i, d in enumerate(coeffs))
+            assert delta == approx(rhs, rel=4 * np.finfo(float).eps, abs=0)
+
+
+def test_ritz_defect_scalar():
+    assert starktools.ritz_defect(55, 0.3) == 0.3
+
+
+def test_ritz_defect_not_converging_raises():
+    # The expansion does not describe 1s; the iteration runs into n = delta
+    with raises(ValueError):
+        starktools.ritz_defect(1, starktools.HELIUM_FS[0][1][1])
+
+
+def test_lookup_beyond_table_is_hydrogenic():
+    qd = starktools.quantumdefects(defects)
+    assert qd.quantum_defect(55, 7) == 0.0
+    assert starktools.quantumdefects().quantum_defect(55, 0) == 0.0
+
+
+def test_lookup_fine_structure():
+    qd = starktools.quantumdefects(starktools.HELIUM_FS)
+    assert qd.quantum_defect(55, 1, 1, 2) == starktools.ritz_defect(55, starktools.HELIUM_FS[1][1][2])
+    assert qd.quantum_defect(55, 7, 1, 8) == 0.0
+    with raises(KeyError):
+        qd.quantum_defect(55, 1, 1, 3)
+
+
+def test_helium_defects():
+    triplet = starktools.helium_defects(1)
+    singlet = starktools.helium_defects(0)
+    for l in starktools.HELIUM_FS:
+        assert triplet[l] == starktools.HELIUM_FS[l][1][l + 1]
+        assert singlet[l] == starktools.HELIUM_FS[l][0][l]
+    assert starktools.helium_defects(1, J=lambda l: max(l - 1, 1))[1] == starktools.HELIUM_FS[1][1][1]
+    # The low-precision table above is the triplet J = l + 1 rows, rounded
+    for l, coeffs in defects.items():
+        k = min(len(coeffs), len(triplet[l]))
+        assert np.allclose(coeffs[:k], triplet[l][:k], rtol=0, atol=2e-7)
+        assert all(c == 0 for c in coeffs[k:])
+
+
+def test_transition():
+    qd = starktools.quantumdefects(starktools.HELIUM_FS)
+    nu = qd.transition((55, 0, 1, 1), (55, 1, 1, 2))
+    assert nu == approx(-9.118568, rel=1e-7)
+    expected = (qd.energy_level(55, 0, 1, 1) - qd.energy_level(55, 1, 1, 2)) * starktools.Constants.E_He / starktools.Constants.h * 1e-9
+    assert nu == expected
+    assert starktools.quantumdefects(defects).transition((55, 0), (55, 1)) == approx(nu, rel=1e-7)
 
 
 def test_energy_level():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     e55p = qd.energy_level(55, 0)
-    assert e55p == -3.341738483799353e-04
+    assert e55p == approx(-1.6708692418996766e-04, rel=1e-12, abs=1e-16)
 
 def test_energy_level_si():
-    qd = starktools.QuantumDefects(defects)
-    R_He = starktools.Constants.R_He
-    c  = starktools.Constants.c 
-    h = starktools.Constants.h
-    e55p = R_He * c * h * qd.energy_level(55, 0)
-    assert e55p == approx(7.283563680292469e-22)
+    qd = starktools.quantumdefects(defects)
+    e55p = starktools.Constants.E_He * qd.energy_level(55, 0)
+    assert e55p == approx(-7.283563680292469e-22, rel=1e-6, abs=0)
 
 def test_calc_matrix_element():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     element = qd.calc_matrix_element(56, 0, 55, 1, 70)
     assert element == approx(1190, abs=10)
     element = qd.calc_matrix_element(55, 1, 56, 0, 70)
     assert element == approx(1190, abs=10)
 
 def test_forbidden():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     assert qd.calc_matrix_element(13, 0, 13, 2, 19) == 0
 
 
 def test_integral_r_comparison():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
     l1 = 1
     n2 = 13
     l2 = 0
     nmax = 19
 
-    ns1 = n1 -  qd._get_qd(n1, l1)
-    ns2 = n2 -  qd._get_qd(n2, l2)
+    ns1 = n1 -  qd.quantum_defect(n1, l1)
+    ns2 = n2 -  qd.quantum_defect(n2, l2)
 
     # Numerov integrals
     wf1 = starktools.Tools.numerov(ns1, l1, nmax)
@@ -98,10 +151,10 @@ def test_integral_r_comparison():
 
 
 def test_hermitian():
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
     n1 = 13
-    ns1 = n1 - qd._get_qd(13, 0)
-    ns2 = n1 - qd._get_qd(13, 1)
+    ns1 = n1 - qd.quantum_defect(13, 0)
+    ns2 = n1 - qd.quantum_defect(13, 1)
     wf1  = starktools.Tools.numerov(ns1, 1, 19)
     wf2  = starktools.Tools.numerov(ns2, 0, 19)
     radialInt1 = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)

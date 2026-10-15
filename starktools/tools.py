@@ -11,6 +11,7 @@ class Tools:
 
             self.r, self.y, self.start, self.end = Tools.numerov.integrate(n, l, nmax)
 
+        @staticmethod
         def integrate(n: float, l: int, nmax = -1, rCore=0.65):
             """
             Calculate radial integral for given state using numerov approach.
@@ -23,7 +24,7 @@ class Tools:
             if nmax == -1:
                 nmax = n
 
-            h = 0.01 # Step Size
+            h = 0.005 # Step Size
             w = -0.5 *float(n)**-2 # Energy
 
             # Function for calculating g(x)
@@ -49,7 +50,6 @@ class Tools:
             yStart2 = yStart1 * (1 + h*sqrt(g_func(rStart1)))
 
             # Define integration end points:
-            rCore = 0.191**(1/3) # Core polarisability (specific to each atom species)
             rFugal = n**2 - n * sqrt(n**2 - l*(l+1)) # Inner turning point
 
             # Numerov Method: Need to figure out the number iterations that will be included in the integration.
@@ -86,6 +86,7 @@ class Tools:
             return r, y, iStart, iEnd
 
 
+    @staticmethod
     def numerov_calc_matrix_element(wf1, wf2):
         """
         Calculate the radial component of the transition matrix element.

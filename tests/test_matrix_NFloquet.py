@@ -1,7 +1,31 @@
-from .context import starktools
+import functools
+
+import starktools
 import numpy as np
+import pytest
 from pytest import approx, raises
 import scipy
+
+DEFECTS = {
+    0: [0.29665648771, 0.038296666, 0.0075131, -0.0045476],
+    1: [0.06836028379, -0.018629228, -0.01233275, -0.0079527],
+    2: [0.002891328825, -0.006357704, 0.0003367, 0.0008395],
+    3: [0.00044737927, -0.001739217, 0.00010478, 3.31e-05],
+    4: [0.00012714167, -0.000796484, -9.85e-06, -1.9e-05],
+    5: [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
+    6: [2.3047609e-05, -0.0002610672, -4.04e-06, 0],
+}
+QD = starktools.quantumdefects(DEFECTS)
+
+
+def _el(m, b1, b2, matrix=None):
+    """Matrix element between basis states b1 and b2 (state tuples).
+
+    Pass ``matrix`` to read from an assembled array (e.g. ``hf(famps)``) instead of ``m.matrix``.
+    """
+    matrix = m.matrix if matrix is None else matrix
+    return matrix[m.lookuptable[tuple(b1)], m.lookuptable[tuple(b2)]]
+
 
 def test_matrix_dimensions():
     nmin = 3
@@ -14,13 +38,13 @@ def test_matrix_dimensions():
     for b1 in starktools.nlqqbasis(nmin,nmax,q):
         count += 1
     
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freqs))
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freqs, defects=DEFECTS))
     assert h0.shape == (count, count)
 
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, field))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(field)
     assert hf.shape == (count, count)
 
-    Hs = np.asarray(starktools.MatrixHsNFloquet(nmin, nmax, q))
+    Hs = np.asarray(starktools.matrixHsNF(nmin, nmax, q, defects=DEFECTS))
     assert Hs.shape == (count, count)
 
 
@@ -29,11 +53,11 @@ def test_matrix_H0NFloquet():
     """Test structure of H0floquet matrix is correct.
     Should only have diagonal entries which follow E = -1/2n^2 + q*freq
     """
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = [2]
     freq = [2]
-    m = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
+    m = starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS)
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)
 
@@ -42,8 +66,8 @@ def test_matrix_H0NFloquet():
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
             for q in  qq:
-                elm = m[n]
-                assert m[n][l][q][n][l][q] == -0.5 * float(n)**(-2) + q * freq[0]
+                assert _el(m, (n, l, q), (n, l, q)) == approx(
+                    QD.energy_level(n, l) + q * freq[0])
     
     # Test non diagonal entries are zero
     for n in nn:
@@ -56,36 +80,38 @@ def test_matrix_H0NFloquet():
                     for l2 in ll2:
                         for q2 in qq:
                             if (n != n2) | (l != l2) | (q != q2):
-                                assert m[n][l][q][n2][l2][q2] == 0
+                                assert _el(m, (n, l, q), (n2, l2, q2)) == 0
 
 def test_H0NFloquet_sample_vals():
-    h = starktools.MatrixH0NFloquet(3,5,[1,1,], [4,3])
-    h0 = starktools.MatrixH0(3,5)
-    assert h[3][0][1][1][3][0][1][1] == h0[3][0][3][0] + 4 + 3
-    assert h[3][0][1][0][3][0][1][0] == h0[3][0][3][0] + 4
-    assert h[3][0][0][1][3][0][0][1] == h0[3][0][3][0] + 3
-    assert h[3][0][0][1][3][0][0][0] == 0
+    h = starktools.matrixH0NF(3,5,[1,1,], [4,3], defects=DEFECTS)
+    h0 = starktools.matrixH0(3,5, defects=DEFECTS)
+    e30 = h0.matrix[h0.lookuptable[(3, 0)], h0.lookuptable[(3, 0)]]
+    assert _el(h, (3, 0, 1, 1), (3, 0, 1, 1)) == approx(e30 + 4 + 3, rel=1e-5)
+    assert _el(h, (3, 0, 1, 0), (3, 0, 1, 0)) == approx(e30 + 4, rel=1e-5)
+    assert _el(h, (3, 0, 0, 1), (3, 0, 0, 1)) == approx(e30 + 3, rel=1e-5)
+    assert _el(h, (3, 0, 0, 1), (3, 0, 0, 0)) == 0
 
 def test_HsNFloquet_sample_vals():
-    h = starktools.MatrixHsNFloquet(3,5,[1,1])
-    qd = starktools.QuantumDefects()
-    assert (h[3][1][0][0][3][0][0][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
-    assert (h[3][0][0][0][3][1][0][0] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
-    assert (h[3][0][0][0][3][1][0][0] == h[3][1][0][0][3][0][0][0])
+    h = starktools.matrixHsNF(3,5,[1,1], defects=DEFECTS)
+    qd = starktools.quantumdefects(DEFECTS)
+    assert (_el(h, (3, 1, 0, 0), (3, 0, 0, 0)) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
+    assert (_el(h, (3, 0, 0, 0), (3, 1, 0, 0)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
+    assert (_el(h, (3, 0, 0, 0), (3, 1, 0, 0)) == _el(h, (3, 1, 0, 0), (3, 0, 0, 0)))
 
-    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
-    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
-    assert (h[3][0][0][1][3][1][0][1] ==  qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
+    assert (_el(h, (3, 0, 0, 1), (3, 1, 0, 1)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
+    assert (_el(h, (3, 0, 0, 1), (3, 1, 0, 1)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
+    assert (_el(h, (3, 0, 0, 1), (3, 1, 0, 1)) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
 
 def test_HfNFloquet_sample_vals():
     # Double field strength to account for 0.5*f
-    h = starktools.MatrixHfNFloquet(3,5,[1,1], [2,2])
-    qd = starktools.QuantumDefects()
-    assert (h[3][0][0][0][3][1][1][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
-    assert (h[3][1][0][0][3][0][1][0] == qd.calc_matrix_element(3, 0, 3, 1, nmax = 5))
-    assert (h[3][1][1][1][3][0][1][0] == qd.calc_matrix_element(3, 1, 3, 0, nmax = 5))
+    hf_obj = starktools.matrixHfNF(3,5,[1,1], defects=DEFECTS)
+    hf = hf_obj([2,2])
+    qd = starktools.quantumdefects(DEFECTS)
+    assert (_el(hf_obj, (3, 0, 0, 0), (3, 1, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
+    assert (_el(hf_obj, (3, 1, 0, 0), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 0, 3, 1, nmax = 5), rel=1e-5))
+    assert (_el(hf_obj, (3, 1, 1, 1), (3, 0, 1, 0), hf) == approx(qd.calc_matrix_element(3, 1, 3, 0, nmax = 5), rel=1e-5))
     
-    assert (h[3][1][0][1][3][0][1][0] == 0)
+    assert (_el(hf_obj, (3, 1, 0, 1), (3, 0, 1, 0), hf) == 0)
 
 
 
@@ -93,12 +119,12 @@ def test_matrix_H0NFloquet_two_fields():
     """Test structure of H0floquet matrix is correct.
     Should only have diagonal entries which follow E = -1/2n^2 + q*freq
     """
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = [2,1]
     freq = [2,1]
 
-    m = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
+    m = starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS)
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq1 = np.arange(-q[0], q[0]+1, dtype=np.int64)
     qq2 = np.arange(-q[1], q[1]+1, dtype=np.int64)
@@ -109,9 +135,9 @@ def test_matrix_H0NFloquet_two_fields():
         for l in ll:
             for q1 in  qq1:
                 for q2 in  qq2:
-                    elm = m[n][l][q1][q2][n][l][q1][q2]
-                    val = -0.5 * float(n)**(-2) + q1 * freq[0] + q2 * freq[1]
-                    assert elm  == val
+                    elm = _el(m, (n, l, q1, q2), (n, l, q1, q2))
+                    val = QD.energy_level(n, l) + q1 * freq[0] + q2 * freq[1]
+                    assert elm == approx(val)
     
     # Test non diagonal entries are zero
     for n in nn:
@@ -125,61 +151,51 @@ def test_matrix_H0NFloquet_two_fields():
                             for qa2 in qq1:
                                 for qb2 in qq2:
                                     if (n != n2) | (l != l2) | (qa != qa2) | (qb != qb2) :
-                                        assert m[n][l][qa][qb][n2][l2][qa2][qb2] == 0
+                                        assert _el(m, (n, l, qa, qb), (n2, l2, qa2, qb2)) == 0
 
 def test_matrix_H0NFloquet_two_fields_test_2():
     """Test structure of H0floquet matrix is correct.
     Should only have diagonal entries which follow E = -1/2n^2 + q*freq
     """
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = [2,2]
     freq = [2,5]
-    m = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
+    m = starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS)
     
     for n1, l1, qa1, qb1 in starktools.nlqqbasis(nmin, nmax, q):
         for n2, l2, qa2, qb2 in starktools.nlqqbasis(nmin, nmax, q):
             if (n1, l1, qa1, qb1) == (n2, l2, qa2, qb2):
-                assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == -0.5 * float(n1)**(-2) + qa1 * freq[0] + qb1 * freq[1]
+                assert _el(m, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2)) == approx(
+                    QD.energy_level(n1, l1) + qa1 * freq[0] + qb1 * freq[1])
             else:
-                assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == 0
+                assert _el(m, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2)) == 0
 
 
 def test_compare_H0NFloquet_H0Floquet():
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = 2
     freq = 2
 
-    m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-    m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, [q], [freq])
+    m0_Floquet  =  starktools.matrixH0F(nmin, nmax, q, freq, defects=DEFECTS)
+    m0_NFloquet = starktools.matrixH0NF(nmin, nmax, [q], [freq], defects=DEFECTS)
 
-    np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
-
-# def test__H0NFloquet_H0Floquet():
-#     nmin = 1
-#     nmax = 10
-#     q = (2,1)
-#     freq = (2,0.1)
-
-#     m0_Floquet  =  starktools.MatrixH0Floquet(nmin, nmax, q, freq)
-#     m0_NFloquet = starktools.MatrixH0NFloquet(nmin, nmax, q, freq)
-
-#     np.testing.assert_array_equal(m0_Floquet, m0_NFloquet)
+    np.testing.assert_array_equal(np.asarray(m0_Floquet), np.asarray(m0_NFloquet))
 
 def test_compare_HsNFloquet_HsFloquet():
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = 2
     freq = 2
 
-    mH_Floquet  =  starktools.MatrixHsFloquet(nmin, nmax, q)
-    mH_NFloquet = starktools.MatrixHsNFloquet(nmin, nmax, [q])
+    mH_Floquet  =  starktools.matrixHsF(nmin, nmax, q, defects=DEFECTS)
+    mH_NFloquet = starktools.matrixHsNF(nmin, nmax, [q], defects=DEFECTS)
 
     np.testing.assert_array_equal(np.asarray(mH_Floquet), np.asarray(mH_NFloquet))
 
 def test_compare_HfNFloquet_HfFloquet():
-    nmin = 1
+    nmin = 2
     nmax = 10
     q = 2
     freq = 2
@@ -194,10 +210,14 @@ def test_compare_HfNFloquet_HfFloquet():
     }
 
 
-    mf_Floquet  = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, q, defects=defects))
-    mf_NFloquet = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, [q], [1], defects = defects))*2
+    # Single-field wrapper is the N=1 case of the v2 N-field class; the unit
+    # matrix (which carries the 1/2 sideband factor) must match bit-for-bit.
+    mf_Floquet_unit = starktools.matrixHfF(nmin, nmax, q, defects=DEFECTS).matrix[0]
+    mf_NFloquet_unit = starktools.matrixHfNF(nmin, nmax, [q], defects=DEFECTS).matrix[0]
 
-    np.testing.assert_array_equal(mf_Floquet, mf_NFloquet)
+    np.testing.assert_array_equal(np.asarray(mf_Floquet_unit), np.asarray(mf_NFloquet_unit))
+    # Assembling with an amplitude scales linearly: hf([f]) = f * unit.
+    np.testing.assert_array_equal(starktools.matrixHfF(nmin, nmax, q, defects=DEFECTS)([2.0]), 2.0 * mf_Floquet_unit)
 
 
 
@@ -209,7 +229,7 @@ def test_matrix_HsNFloquet():
     nmax = 19
     q = [2]
     freq = [2]
-    m =  starktools.MatrixHsNFloquet(nmin, nmax, q)
+    m =  starktools.matrixHsNF(nmin, nmax, q, defects=DEFECTS)
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)
@@ -219,7 +239,7 @@ def test_matrix_HsNFloquet():
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
             for q in  qq:
-                assert m[n][l][q][n][l][q] == 0
+                assert _el(m, (n, l, q), (n, l, q)) == 0
     
     # Check correct terms are coupled correctly
     for n in nn:
@@ -230,7 +250,7 @@ def test_matrix_HsNFloquet():
                 for l2 in ll2:
                     if np.abs(l-l2) == 1:
                         for q in qq:
-                            assert m[n][l][q][n2][l2][q] != 0
+                            assert _el(m, (n, l, q), (n2, l2, q)) != 0
     
     # Check other entries are zero
     for n in nn:
@@ -242,18 +262,20 @@ def test_matrix_HsNFloquet():
                     for l2 in ll2:
                         for q2 in qq:
                             if  (np.abs(l-l2) != 1):
-                                assert m[n][l][q][n2][l2][q2] == 0
+                                assert _el(m, (n, l, q), (n2, l2, q2)) == 0
 
-    # Check a value
-    wf1  = starktools.Tools.numerov(19, 0, 19)
-    wf2 = starktools.Tools.numerov(13, 1, 19)
+    # Check a value (numerov on defect-corrected effective quantum numbers)
+    ns19 = 19 - QD.quantum_defect(19, 0)
+    ns13 = 13 - QD.quantum_defect(13, 1)
+    wf1 = starktools.Tools.numerov(ns19, 0, 19)
+    wf2 = starktools.Tools.numerov(ns13, 1, 19)
     radint = starktools.Tools.numerov_calc_matrix_element(wf1, wf2)
     l2 = 1
     angularElem = (l2**2)/((2*l2+1)*(2*l2-1))
     angularElem = np.sqrt(angularElem)
 
     for q in qq:
-        assert m[19][0][q][13][1][q] == radint * angularElem
+        assert _el(m, (19, 0, q), (13, 1, q)) == approx(radint * angularElem)
 
 def test_matrix_HfNFloquet():
     """Test structure of HfFloquet matrix is correct.
@@ -264,7 +286,8 @@ def test_matrix_HfNFloquet():
     nmax = 19
     q = [2]
 
-    m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps=[1])
+    hf_obj = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)
+    hf = hf_obj([1])
 
     nn = np.arange(nmin, nmax+1, dtype=np.int64)
     qq = np.arange(-q[0], q[0]+1, dtype=np.int64)
@@ -274,7 +297,7 @@ def test_matrix_HfNFloquet():
         ll = np.arange(0, n, dtype=np.int64)
         for l in ll:
             for q in  qq:
-                assert m[n][l][q][n][l][q] == 0
+                assert _el(hf_obj, (n, l, q), (n, l, q), hf) == 0
     
     # Check correct terms are coupled
     for n in nn:
@@ -287,9 +310,9 @@ def test_matrix_HfNFloquet():
                         for q in qq:
                             for q2 in qq:
                                 if np.abs(q-q2) == 1:
-                                    if m[n][l][q][n2][l2][q2] == 0:
+                                    if _el(hf_obj, (n, l, q), (n2, l2, q2), hf) == 0:
                                         print(n,l,q,n2,l2,q2)
-                                    assert m[n][l][q][n2][l2][q2] != 0
+                                    assert _el(hf_obj, (n, l, q), (n2, l2, q2), hf) != 0
 
 
 def test_matrix_HfNFloquet_two_colors():
@@ -298,9 +321,13 @@ def test_matrix_HfNFloquet_two_colors():
     which q` = q ± 1, and l` = l ± 1
     """
 
-    def matrix_elm(basis, f1, f2, nmax):
+    @functools.cache
+    def reference_element(n1, l1, n2, l2):
+        return qd.calc_matrix_element(n1, l1, n2, l2, nmax)
+
+    def matrix_elm(basis, f1, f2):
         n1, l1, qa1, qb1, n2, l2, qa2, qb2 = basis
-        val = qd.calc_matrix_element(n1, l1, n2, l2, nmax)
+        val = reference_element(n1, l1, n2, l2)
 
         elm = 0
         if np.abs(qa1-qa2) + np.abs(qb1-qb2) != 1:
@@ -320,7 +347,7 @@ def test_matrix_HfNFloquet_two_colors():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
 
     nmin = 13
@@ -328,8 +355,9 @@ def test_matrix_HfNFloquet_two_colors():
     q = (2,2)
     famps = (12, 0.1)
 
-    m = starktools.MatrixHfNFloquet(nmin, nmax, q, famps, defects=defects)
-    
+    hf_obj = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)
+    hf = hf_obj(famps)
+
 
     for b1 in starktools.nlqqbasis(nmin, nmax, q):
         n1, l1, qa1, qb1 = b1
@@ -337,8 +365,8 @@ def test_matrix_HfNFloquet_two_colors():
             n2, l2, qa2, qb2 = b2
             if np.abs(l1-l2)==1:
                 if np.abs(qa1-qa2) == 1 or np.abs(qb1-qb2) == 1:
-                    elm = matrix_elm(b1+b2, famps[0], famps[1], nmax)
-                    assert m[n1][l1][qa1][qb1][n2][l2][qa2][qb2] == approx(elm, rel=10e-10)
+                    elm = matrix_elm(b1+b2, famps[0], famps[1])
+                    assert _el(hf_obj, (n1, l1, qa1, qb1), (n2, l2, qa2, qb2), hf) == approx(elm, rel=10e-10)
 
 
 def test_init_NFlouet_with_single_ac_fields():
@@ -346,21 +374,24 @@ def test_init_NFlouet_with_single_ac_fields():
     nmax = 8
     q = [1]
     vac = [0.1]
-    hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
+    hfn = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)
+    hfn(vac)
 
 def test_init_NFlouet_with_two_ac_fields():
     nmin = 5
     nmax = 8
     q = [1,1]
     vac = [0.1, 0.1]
-    hfn = starktools.MatrixHfNFloquet(nmin, nmax, q, vac)
+    hfn = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)
+    hfn(vac)
 
 def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
-    nmin = 1
+    nmin = 2
     nmax = 3
     q = (2,2)
     f = (0.8,0.5)
-    h = starktools.MatrixHfNFloquet(nmin, nmax, q, f)
+    hf_obj = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)
+    hf = hf_obj(f)
 
     n1 = 2
     l1 = 0
@@ -371,7 +402,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     ma2 = 1
     mb2 = 2
     
-    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] != 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) != 0)
 
     n1 = 2
     l1 = 0
@@ -390,7 +421,7 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     elm = radint * angularElem
 
     val = 0.5*elm*f[0] + 0.5*elm*f[1]
-    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) == 0)
 
     n1 = 2
     l1 = 0
@@ -401,14 +432,14 @@ def test_coupling_delta_m1_is_1_delta_m2_is_also_1():
     ma2 = 2
     mb2 = 2
     
-    assert (h[n1][l1][ma1][mb1][n2][l2][ma2][mb2] == 0)
+    assert (_el(hf_obj, (n1, l1, ma1, mb1), (n2, l2, ma2, mb2), hf) == 0)
 
 
 def test_ac_starkshift_one_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -425,7 +456,7 @@ def test_ac_starkshift_one_ac_field1():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -433,15 +464,15 @@ def test_ac_starkshift_one_ac_field1():
 
     rabi = electricDipoleMoment * estrength/starktools.Constants.h
 
-    assert rabi/2 == 1571675.449592038
+    assert rabi/2 == 1571849.9009367884
     nmin = 55
     nmax = 55
     q = [1]
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.1]
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He 
     
     neig = h0.shape[0]
     val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
@@ -453,8 +484,8 @@ def test_ac_starkshift_one_ac_field1():
 def test_ac_starkshift_two_ac_field1():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -471,7 +502,7 @@ def test_ac_starkshift_two_ac_field1():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -479,15 +510,15 @@ def test_ac_starkshift_two_ac_field1():
 
     rabi = electricDipoleMoment * estrength/starktools.Constants.h
 
-    assert rabi/2 == 1571675.449592038
+    assert rabi/2 == 1571849.9009367884
     nmin = 54
     nmax = 58
     q = [1,1]
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.1, 0]
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He 
     
     neig = h0.shape[0]
     val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
@@ -499,8 +530,8 @@ def test_ac_starkshift_two_ac_field1():
 def test_ac_starkshift_two_ac_field2():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -517,7 +548,7 @@ def test_ac_starkshift_two_ac_field2():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -526,7 +557,7 @@ def test_ac_starkshift_two_ac_field2():
     rabi= electricDipoleMoment * estrength/starktools.Constants.h
 
 
-    assert rabi/2 == 1571675.449592038
+    assert rabi/2 == 1571849.9009367884
 
     nmin = 54
     nmax = 58
@@ -534,8 +565,8 @@ def test_ac_starkshift_two_ac_field2():
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118568e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0, 0.1]
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He 
     
     neig = h0.shape[0]
     val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
@@ -548,8 +579,8 @@ def test_ac_starkshift_two_ac_field2():
 def test_ac_starkshift_two_ac_field3():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -566,7 +597,7 @@ def test_ac_starkshift_two_ac_field3():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -587,8 +618,8 @@ def test_ac_starkshift_two_ac_field3():
     freq = [9.118568e9 * starktools.Constants.h /starktools.Constants.E_He, 8637175913* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.01, 0.01]
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He 
     
     neig = h0.shape[0]
     val = np.linalg.eigvalsh(h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
@@ -604,8 +635,8 @@ def test_ac_starkshift_two_ac_field3():
 def test_ac_starkshift_commensurate():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -622,7 +653,7 @@ def test_ac_starkshift_commensurate():
         5 : [4.8729846e-05, -0.0004332281, -8.1e-06, 0],
         6 : [2.3047609e-05, -0.0002610672, -4.04e-06, 0]
     }
-    qd = starktools.QuantumDefects(defects)
+    qd = starktools.quantumdefects(defects)
 
     electricDipoleMoment = qd.calc_matrix_element(55, 0, 55, 1, nmax = 80) * starktools.Constants.e * starktools.Constants.a_He
 
@@ -630,15 +661,15 @@ def test_ac_starkshift_commensurate():
 
     rabi = electricDipoleMoment * estrength/starktools.Constants.h
 
-    assert rabi/2 == 1571675.449592038
+    assert rabi/2 == 1571849.9009367884
     nmin = 55
     nmax = 55
     q = [5,5]
     freq = [9.11857e9 * starktools.Constants.h /starktools.Constants.E_He, 9.118566e9* starktools.Constants.h /starktools.Constants.E_He]
     vac = [0.1/2, 0.1/2]
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He 
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He 
     
     neig = h0.shape[0]
     M = (h0 + hf)*starktools.Constants.E_He/starktools.Constants.h
@@ -653,8 +684,8 @@ def test_ac_starkshift_commensurate():
 def test_dc_stark_shift():
     
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -678,9 +709,9 @@ def test_dc_stark_shift():
     freq = (19.25691e9 * starktools.Constants.h /starktools.Constants.E_He, 9.148568e9* starktools.Constants.h /starktools.Constants.E_He)
     vac = (0, 0)
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He
-    hs = np.asarray(starktools.MatrixHsNFloquet(nmin, nmax, q, defects)) * 1/starktools.Constants.F_He
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He
+    hs = np.asarray(starktools.matrixHsNF(nmin, nmax, q, defects=DEFECTS)) * 1/starktools.Constants.F_He
 
     fmin = 0
     fmax = 10
@@ -705,9 +736,9 @@ def test_dc_stark_shift():
     freq = (19.25691e9 * starktools.Constants.h /starktools.Constants.E_He, 9.148568e9* starktools.Constants.h /starktools.Constants.E_He)
     vac = (0, 0)
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, q, freq, defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, q, vac, defects)) * 1/starktools.Constants.F_He
-    hs = np.asarray(starktools.MatrixHsNFloquet(nmin, nmax, q, defects)) * 1/starktools.Constants.F_He
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, q, freq, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, q, defects=DEFECTS)(vac) * 1/starktools.Constants.F_He
+    hs = np.asarray(starktools.matrixHsNF(nmin, nmax, q, defects=DEFECTS)) * 1/starktools.Constants.F_He
 
     fmin = 0
     fmax = 10
@@ -734,8 +765,8 @@ def test_dc_stark_shift():
 def test_shift_10_khz_ac_comparison_with_HF():
      
     def find_eigen(n, l, v, offset=0):
-        qd = starktools.QuantumDefects(defects)
-        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h/2 + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
+        qd = starktools.quantumdefects(defects)
+        energy = qd.energy_level(n, l) * starktools.Constants.E_He/starktools.Constants.h + offset#+  qd.calc_matrix_element(55,0, 55, 1, 70)+offset
         return find_nearest(v, energy)
 
     def find_nearest(array, value):
@@ -771,8 +802,8 @@ def test_shift_10_khz_ac_comparison_with_HF():
     freq2 = (RESONANCE_ss)* starktools.Constants.h / starktools.Constants.E_He
     freqs = (freq1, freq2)
 
-    h0 = np.asarray(starktools.MatrixH0NFloquet(nmin, nmax, qmaxs, freqs, defects=defects))
-    hf = np.asarray(starktools.MatrixHfNFloquet(nmin, nmax, qmaxs, (0, 0.1) ,defects=defects))
+    h0 = np.asarray(starktools.matrixH0NF(nmin, nmax, qmaxs, freqs, defects=DEFECTS))
+    hf = starktools.matrixHfNF(nmin, nmax, qmaxs, defects=DEFECTS)((0, 0.1))
 
     vals = np.linalg.eigvals(h0 + hf/starktools.Constants.F_He)
     ind55s = find_eigen(na, 0, vals)
@@ -781,10 +812,10 @@ def test_shift_10_khz_ac_comparison_with_HF():
     shift_hfn = vals[ind56s]-vals[ind55s]- 39112998448.00716
 
 
-    # HF
-    h0 = np.asarray(starktools.MatrixH0Floquet(nmin, nmax, 1, freqs[1], defects=defects))
-    hf = np.asarray(starktools.MatrixHfFloquet(nmin, nmax, 1, defects=defects))
-    vals = np.linalg.eigvals(h0 + 0.5* hf * 0.1/starktools.Constants.F_He)
+    # HF (single-field; 1/2 sideband factor is inside the unit matrix)
+    h0 = np.asarray(starktools.matrixH0F(nmin, nmax, 1, freqs[1], defects=DEFECTS))
+    hf = starktools.matrixHfF(nmin, nmax, 1, defects=DEFECTS)
+    vals = np.linalg.eigvals(h0 + hf([0.1]) / starktools.Constants.F_He)
     ind55s = find_eigen(na, 0, vals)
     ind56s = find_eigen(nb, 0, vals)
 

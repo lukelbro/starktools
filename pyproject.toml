@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "starktools"
+version = "2.0.0"
+description = "Personal library for calculating energy levels and matrix elements in Rydberg atoms"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Luke Brown" },
+]
+dependencies = [
+    "numpy",
+    "sympy",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "scipy",
+]
+
+[tool.setuptools.packages.find]
+include = ["starktools*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+starktools = ["py.typed"]

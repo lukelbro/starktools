@@ -1,15 +1,15 @@
-from .context import starktools
+import starktools
 import numpy as np
 from pytest import approx, raises
 
 def test_constants_h():
-    assert starktools.Constants.h ==  approx(6.62606957e-34) # slight difference with matlab version
+    assert starktools.Constants.h ==  approx(6.62606957e-34, rel=1e-6, abs=0) # slight difference with matlab version
 
 def test_constants_c():
     assert starktools.Constants.c == 299792458
     
 def test_constants_hbar():
-    assert starktools.Constants.hbar == approx(6.62606957e-34/(2*np.pi))
+    assert starktools.Constants.hbar == approx(6.62606957e-34/(2*np.pi), rel=1e-6, abs=0)
 
 def test_constant_Ry():
     assert starktools.Constants.Ry == approx(109737.31568539*100)
@@ -19,7 +19,7 @@ def test_constant_R_He():
     
 def test_constant_E_He():
     E = starktools.Constants.E_He/2
-    assert  E == approx(2.179573211848553e-18)
+    assert  E == approx(2.179573211848553e-18, rel=1e-6, abs=0)
 
     # assert starktools.Constants.e == 1.6021766208e-19
     # assert starktools.Constants.a_0 == 0.52917721092e-10
